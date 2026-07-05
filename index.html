@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AFHS 患者集計</title>
+  <style>
+    :root {
+      --bg:    #D6D1C2;
+      --dark:  #1C3530;
+      --a1:    #4E7868;
+      --a2:    #3A6E5E;
+      --a3:    #286858;
+      --a4:    #1E6068;
+      --a5:    #1C5A72;
+      --a6:    #196E96;
+      --warn:  #B86018;
+      --white: #FFFFFF;
+      --border:  color-mix(in srgb, var(--dark) 18%, var(--white));
+      --muted:   color-mix(in srgb, var(--dark) 75%, var(--bg));
+      --subtle:  color-mix(in srgb, var(--dark) 52%, var(--bg));
+      --shadow-s: 0 2px 8px color-mix(in srgb, var(--dark) 12%, transparent);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: var(--bg); color: var(--dark);
+      min-height: 100vh; font-size: 16px; line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    .scene { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+    .scene__plane--lime {
+      position: absolute; width: min(125vw, 52rem); height: 40vh;
+      top: -8%; left: -22%;
+      background: color-mix(in srgb, var(--a1) 20%, var(--bg));
+      transform: rotate(-4deg);
+    }
+    .scene__band { position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--a6); }
+    .app { position: relative; z-index: 0; max-width: 480px; margin: 0 auto; }
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: linear-gradient(118deg,
+        color-mix(in srgb, var(--dark) 52%, var(--a3)) 0%,
+        color-mix(in srgb, var(--a4) 50%, var(--a5)) 70%,
+        color-mix(in srgb, var(--a5) 42%, var(--a6)) 100%);
+      border-bottom: 1px solid color-mix(in srgb, var(--dark) 28%, var(--a4));
+      box-shadow: 0 2px 10px color-mix(in srgb, var(--dark) 20%, transparent);
+      padding: 13px 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .header h1 { font-size: 16px; font-weight: 800; color: var(--white); letter-spacing: 0.04em; }
+    .header h1 em {
+      font-style: normal; font-size: 0.65em; font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: color-mix(in srgb, var(--white) 78%, var(--a6));
+      margin-right: 0.5em;
+    }
+    .header-right { margin-left: auto; }
+    .settings-btn, .back-btn {
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      color: color-mix(in srgb, var(--white) 88%, var(--a6));
+    }
+    .settings-btn {
+      font-size: 13px; font-weight: 600; padding: 4px 8px;
+      border: 1px solid color-mix(in srgb, var(--white) 30%, var(--a5));
+      border-radius: 6px;
+    }
+    .back-btn { font-size: 16px; font-weight: 600; padding: 3px 8px 3px 0; }
+    .screen { display: none; padding: 16px 14px 32px; }
+    .screen.active { display: block; }
+    .card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 14px;
+      box-shadow: var(--shadow-s);
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--a2);
+      margin-bottom: 10px; padding-bottom: 8px;
+      border-bottom: 1px solid color-mix(in srgb, var(--a1) 18%, var(--white));
+    }
+    label.field-label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--subtle); margin-bottom: 6px;
+    }
+    input[type="text"], input[type="date"], input[type="number"], select, textarea {
+      width: 100%; padding: 11px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 16px; font-family: inherit;
+      background: var(--white); color: var(--dark);
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--a3);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--a3) 18%, transparent);
+    }
+    .field { margin-bottom: 12px; }
+    .field:last-child { margin-bottom: 0; }
+    .radio-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; cursor: pointer; font-size: 15px;
+    }
+    .radio-item:has(input:checked) {
+      border-color: var(--a3);
+      background: color-mix(in srgb, var(--a1) 8%, var(--white));
+    }
+    .radio-item input { width: 18px; height: 18px; accent-color: var(--a3); }
+    .warn-box {
+      background: color-mix(in srgb, var(--warn) 10%, var(--white));
+      border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--white));
+      border-left: 3px solid var(--warn);
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
+      font-size: 13px; color: var(--muted); line-height: 1.55;
+    }
+    .warn-box strong { color: var(--warn); }
+    .info-box {
+      background: color-mix(in srgb, var(--a4) 8%, var(--white));
+      border: 1px solid color-mix(in srgb, var(--a4) 28%, var(--white));
+      border-left: 3px solid var(--a5);
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
+      font-size: 12px; color: var(--muted); line-height: 1.6;
+    }
+    .prefill-banner {
+      background: color-mix(in srgb, var(--a1) 12%, var(--white));
+      border: 1px solid color-mix(in srgb, var(--a1) 35%, var(--white));
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
+      font-size: 12px; color: var(--muted);
+    }
+    .prefill-banner strong { color: var(--a2); }
+    .btn {
+      width: 100%; padding: 14px; border-radius: 9px; border: none;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: inherit; margin-bottom: 10px;
+    }
+    .btn-primary {
+      background: linear-gradient(118deg, var(--a3), var(--a5));
+      color: var(--white);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--a3) 35%, transparent);
+    }
+    .btn-outline {
+      background: var(--white); color: var(--a3);
+      border: 1.5px solid color-mix(in srgb, var(--a3) 40%, var(--white));
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .stat-cell {
+      background: color-mix(in srgb, var(--dark) 4%, var(--white));
+      border-radius: 8px; padding: 10px 12px; text-align: center;
+    }
+    .stat-num { font-size: 22px; font-weight: 800; color: var(--a3); }
+    .stat-lbl { font-size: 11px; color: var(--subtle); margin-top: 2px; }
+    .success-icon {
+      width: 64px; height: 64px; margin: 24px auto 16px;
+      border-radius: 50%; background: color-mix(in srgb, var(--a1) 20%, var(--white));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: var(--a3);
+    }
+    .success-title { text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .success-sub { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+    .hidden { display: none !important; }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-pair { display: flex; gap: 6px; }
+    .toggle-pair button {
+      padding: 6px 14px; border-radius: 6px; border: 1.5px solid var(--border);
+      background: var(--white); font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit; color: var(--muted);
+    }
+    .toggle-pair button.active {
+      background: var(--a3); color: var(--white); border-color: var(--a3);
+    }
+    .toggle-pair button.active.no {
+      background: var(--subtle); border-color: var(--subtle);
+    }
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--dark); color: var(--white); padding: 10px 18px;
+      border-radius: 8px; font-size: 14px; font-weight: 600; z-index: 999;
+      transition: transform 0.25s ease; pointer-events: none; max-width: 90vw;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    .test-banner {
+      background: var(--warn); color: var(--white);
+      text-align: center; padding: 8px 12px;
+      font-size: 13px; font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+<div class="scene">
+  <div class="scene__plane--lime"></div>
+  <div class="scene__band"></div>
+</div>
+
+<div class="app">
+  <div id="test-banner" class="test-banner hidden">🧪 テストモード — データは送信されません</div>
+
+  <!-- HOME / FORM -->
+  <div class="screen active" id="screen-form">
+    <div class="header">
+      <h1><em>AFHS</em> 患者集計</h1>
+      <div class="header-right">
+        <button class="settings-btn" onclick="goSettings()">⚙ 設定</button>
+      </div>
+    </div>
+
+    <div style="padding:16px 14px 32px">
+      <div id="pending-banner" class="warn-box hidden">
+        <strong>⚠️ 未送信のデータがあります</strong><br>
+        <span style="font-size:12px">前回の送信が完了していません。</span>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-primary" style="margin:0;padding:9px;font-size:13px" onclick="retryPending()">↻ 再送信</button>
+          <button class="btn btn-outline" style="margin:0;padding:9px;font-size:13px" onclick="clearPending()">破棄</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        カンファ終了後、<strong>1 件ずつ</strong>記録してください。<br>
+        修正はスプレッドシートから行います。
+      </div>
+
+      <div class="card">
+        <div class="card-title">基本情報</div>
+        <div class="field">
+          <label class="field-label" for="inp-date">実施日</label>
+          <input type="date" id="inp-date">
+        </div>
+        <div class="field">
+          <label class="field-label" for="inp-patient">患者 ID</label>
+          <input type="text" id="inp-patient" inputmode="numeric" placeholder="例：12345" onblur="lookupPatient()">
+        </div>
+        <div class="field">
+          <label class="field-label" for="inp-hcuday">HCU 入室日数</label>
+          <input type="number" id="inp-hcuday" min="1" placeholder="例：3（入室日=1日目）">
+        </div>
+      </div>
+
+      <div id="prefill-banner" class="prefill-banner hidden"></div>
+      <div id="validation-warn" class="warn-box hidden"></div>
+
+      <div class="card">
+        <div class="card-title">診療情報</div>
+        <div class="field">
+          <label class="field-label" for="inp-dept">診療科</label>
+          <select id="inp-dept">
+            <option value="">選択してください</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="inp-dx">疾患（短く）</label>
+          <input type="text" id="inp-dx" placeholder="例：大腸癌術後">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">実施区分</div>
+        <div class="radio-group" id="session-type-group">
+          <label class="radio-item">
+            <input type="radio" name="sessionType" value="初回カンファ" checked onchange="onSessionTypeChange()">
+            初回カンファ
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="sessionType" value="再カンファ" onchange="onSessionTypeChange()">
+            再カンファ
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="sessionType" value="その他" onchange="onSessionTypeChange()">
+            その他
+          </label>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label class="field-label" for="inp-session">回数</label>
+          <input type="number" id="inp-session" min="1" value="1">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">メモ（任意）</div>
+        <textarea id="inp-memo" placeholder="再カンファ理由、診療科「その他」の科名など"></textarea>
+      </div>
+
+      <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">記録を送信 ✓</button>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>今月の集計</span>
+          <button onclick="loadStats()" style="background:none;border:none;font-size:14px;color:var(--subtle);cursor:pointer">↻</button>
+        </div>
+        <div id="stats-content" class="stats-grid">
+          <div class="stat-cell"><div class="stat-num">—</div><div class="stat-lbl">読込中</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="screen" id="screen-success">
+    <div class="header">
+      <h1><em>AFHS</em> 送信完了</h1>
+    </div>
+    <div style="padding:16px 14px 32px">
+      <div class="success-icon">✓</div>
+      <p class="success-title">記録しました</p>
+      <p class="success-sub">スプレッドシートに 1 行追加されました</p>
+      <button class="btn btn-primary" onclick="resetForm()">続けて入力する</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="header">
+      <button class="back-btn" onclick="goScreen('screen-form')">‹ 戻る</button>
+      <h1><em>AFHS</em> 設定</h1>
+    </div>
+    <div style="padding:16px 14px 32px">
+      <div class="card">
+        <div class="card-title">GAS Web App URL</div>
+        <div class="field">
+          <input type="text" id="inp-gasurl" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6">
+          Google Apps Script をウェブアプリとしてデプロイした URL を入力します。
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-title">テストモード</div>
+        <div class="toggle-row">
+          <span style="font-size:14px;font-weight:600">テストモード</span>
+          <div class="toggle-pair">
+            <button id="test-y" onclick="setTestMode(true)">ON</button>
+            <button id="test-n" class="active no" onclick="setTestMode(false)">OFF</button>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">
+          ON のとき送信データは GAS に送られません（UI 確認用）。
+        </p>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">設定を保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const DEPARTMENTS = [
+  '内科', '救急総合診療科', '呼吸器内科', '呼吸器外科',
+  '消化器内科', '消化器外科', '循環器内科', '腎臓内科',
+  '泌尿器科', '腎臓外科', '脳外科', '形成外科',
+  '耳鼻咽喉科', 'その他',
+];
+
+let _sending = false;
+let _pendingPayload = null;
+let _patientHistory = null;
+
+const p2 = n => String(n).padStart(2, '0');
+const ls  = k => localStorage.getItem(k);
+const lss = (k, v) => localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+
+window.addEventListener('DOMContentLoaded', () => {
+  const t = new Date();
+  document.getElementById('inp-date').value =
+    `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
+
+  const sel = document.getElementById('inp-dept');
+  DEPARTMENTS.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    sel.appendChild(o);
+  });
+
+  const params = new URLSearchParams(location.search);
+  const gasFromUrl = params.get('gas');
+  if (gasFromUrl) {
+    lss('gasUrl', gasFromUrl);
+    history.replaceState(null, '', location.pathname);
+  }
+
+  document.getElementById('inp-gasurl').value = ls('gasUrl') || '';
+  applyTestMode(ls('testMode') === 'true');
+
+  if (ls('pendingPayload')) {
+    document.getElementById('pending-banner').classList.remove('hidden');
+  }
+
+  ['inp-hcuday', 'inp-session'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateWarnings);
+  });
+  document.querySelectorAll('input[name="sessionType"]').forEach(el => {
+    el.addEventListener('change', updateWarnings);
+  });
+
+  loadStats();
+});
+
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 'screen-form') loadStats();
+}
+
+function goSettings() {
+  document.getElementById('inp-gasurl').value = ls('gasUrl') || '';
+  goScreen('screen-settings');
+}
+
+function saveSettings() {
+  const url = document.getElementById('inp-gasurl').value.trim();
+  lss('gasUrl', url);
+  toast('設定を保存しました');
+  goScreen('screen-form');
+}
+
+function applyTestMode(on) {
+  document.getElementById('test-banner').classList.toggle('hidden', !on);
+  document.getElementById('test-y').classList.toggle('active', on);
+  document.getElementById('test-n').classList.toggle('active', !on);
+  document.getElementById('test-n').classList.toggle('no', !on);
+}
+
+function setTestMode(on) {
+  lss('testMode', on ? 'true' : 'false');
+  applyTestMode(on);
+  toast(on ? 'テストモード ON' : 'テストモード OFF');
+}
+
+function isTestMode() { return ls('testMode') === 'true'; }
+
+function getSessionType() {
+  return document.querySelector('input[name="sessionType"]:checked')?.value || '';
+}
+
+function onSessionTypeChange() {
+  const type = getSessionType();
+  const sessionEl = document.getElementById('inp-session');
+  if (type === '初回カンファ') {
+    sessionEl.value = 1;
+  } else if (type === '再カンファ' && _patientHistory?.found) {
+    sessionEl.value = _patientHistory.suggestedSession || 2;
+  }
+  updateWarnings();
+}
+
+async function lookupPatient() {
+  const id = document.getElementById('inp-patient').value.trim();
+  const banner = document.getElementById('prefill-banner');
+  _patientHistory = null;
+  banner.classList.add('hidden');
+
+  if (!id) return;
+  const url = ls('gasUrl');
+  if (!url || isTestMode()) return;
+
+  try {
+    const res = await fetch(`${url}?action=getPatient&patientId=${encodeURIComponent(id)}`);
+    const json = await res.json();
+    if (json.status !== 'ok' || !json.patient?.found) return;
+
+    _patientHistory = json.patient;
+    if (_patientHistory.department) {
+      document.getElementById('inp-dept').value = _patientHistory.department;
+    }
+    if (_patientHistory.diagnosis) {
+      document.getElementById('inp-dx').value = _patientHistory.diagnosis;
+    }
+    if (getSessionType() === '再カンファ') {
+      document.getElementById('inp-session').value = _patientHistory.suggestedSession || 2;
+    }
+
+    const last = _patientHistory.records[_patientHistory.records.length - 1];
+    banner.innerHTML = `<strong>過去の記録あり</strong> — 前回：${last?.date || '—'}（${last?.sessionNumber || '?'}回目）` +
+      `<br>診療科・疾患を前回値で入力しました`;
+    banner.classList.remove('hidden');
+    updateWarnings();
+  } catch (_) { /* silent */ }
+}
+
+function updateWarnings() {
+  const warnEl = document.getElementById('validation-warn');
+  const warnings = [];
+  const type = getSessionType();
+  const hcuDay = Number(document.getElementById('inp-hcuday').value);
+  const session = Number(document.getElementById('inp-session').value);
+  const dept = document.getElementById('inp-dept').value;
+  const memo = document.getElementById('inp-memo').value.trim();
+
+  if (type === '初回カンファ' && hcuDay && (hcuDay < 2 || hcuDay > 4)) {
+    warnings.push(`初回カンファの入室日数は原則 <strong>2〜4 日目</strong> です（現在：${hcuDay} 日目）`);
+  }
+  if (type === '初回カンファ' && session !== 1) {
+    warnings.push(`初回カンファなのに回数が <strong>${session}</strong> です（通常は 1）`);
+  }
+  if (type === '再カンファ' && session < 2) {
+    warnings.push(`再カンファなのに回数が <strong>${session}</strong> です（通常は 2 以上）`);
+  }
+  if (dept === 'その他' && !memo) {
+    warnings.push('診療科「その他」の場合、メモに科名を書くことを推奨します');
+  }
+
+  if (warnings.length) {
+    warnEl.innerHTML = warnings.map(w => `⚠ ${w}`).join('<br>');
+    warnEl.classList.remove('hidden');
+  } else {
+    warnEl.classList.add('hidden');
+  }
+}
+
+function buildPayload() {
+  return {
+    date: document.getElementById('inp-date').value,
+    patientId: document.getElementById('inp-patient').value.trim(),
+    hcuDay: document.getElementById('inp-hcuday').value,
+    department: document.getElementById('inp-dept').value,
+    diagnosis: document.getElementById('inp-dx').value.trim(),
+    sessionType: getSessionType(),
+    sessionNumber: document.getElementById('inp-session').value,
+    memo: document.getElementById('inp-memo').value.trim(),
+  };
+}
+
+function validatePayload(p) {
+  if (!p.date) return '実施日を入力してください';
+  if (!p.patientId) return '患者 ID を入力してください';
+  if (!p.hcuDay || Number(p.hcuDay) < 1) return 'HCU 入室日数を入力してください';
+  if (!p.department) return '診療科を選択してください';
+  if (!p.diagnosis) return '疾患を入力してください';
+  if (!p.sessionType) return '実施区分を選択してください';
+  if (!p.sessionNumber || Number(p.sessionNumber) < 1) return '回数を入力してください';
+  return null;
+}
+
+async function submitForm() {
+  const payload = buildPayload();
+  const err = validatePayload(payload);
+  if (err) { toast(err); return; }
+
+  updateWarnings();
+  if (isTestMode()) {
+    toast('テストモード：送信スキップ');
+    console.log('TEST payload', payload);
+    goScreen('screen-success');
+    return;
+  }
+
+  const url = ls('gasUrl');
+  if (!url) { toast('設定で GAS URL を入力してください'); return; }
+
+  _pendingPayload = payload;
+  lss('pendingPayload', JSON.stringify({ payload }));
+  await doSend(payload);
+}
+
+async function doSend(payload) {
+  if (_sending) { toast('送信中です'); return; }
+  const url = ls('gasUrl');
+  _sending = true;
+  toast('送信中…');
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      localStorage.removeItem('pendingPayload');
+      _pendingPayload = null;
+      document.getElementById('pending-banner').classList.add('hidden');
+      toast('記録しました ✓');
+      setTimeout(() => { _sending = false; goScreen('screen-success'); }, 800);
+    } else {
+      toast('エラー: ' + (json.message || '不明'));
+      _sending = false;
+    }
+  } catch (_) {
+    toast('送信失敗: 通信エラー');
+    _sending = false;
+  }
+}
+
+async function retryPending() {
+  const saved = ls('pendingPayload');
+  if (!saved) return;
+  const { payload } = JSON.parse(saved);
+  _pendingPayload = payload;
+  await doSend(payload);
+}
+
+function clearPending() {
+  localStorage.removeItem('pendingPayload');
+  _pendingPayload = null;
+  document.getElementById('pending-banner').classList.add('hidden');
+  toast('未送信データを破棄しました');
+}
+
+function resetForm() {
+  document.getElementById('inp-patient').value = '';
+  document.getElementById('inp-hcuday').value = '';
+  document.getElementById('inp-dept').value = '';
+  document.getElementById('inp-dx').value = '';
+  document.getElementById('inp-session').value = '1';
+  document.getElementById('inp-memo').value = '';
+  document.querySelector('input[name="sessionType"][value="初回カンファ"]').checked = true;
+  document.getElementById('prefill-banner').classList.add('hidden');
+  document.getElementById('validation-warn').classList.add('hidden');
+  _patientHistory = null;
+  const t = new Date();
+  document.getElementById('inp-date').value =
+    `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
+  goScreen('screen-form');
+}
+
+async function loadStats() {
+  const el = document.getElementById('stats-content');
+  const url = ls('gasUrl');
+  if (!url || isTestMode()) {
+    el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">GAS URL 設定後に表示</div></div>`;
+    return;
+  }
+  try {
+    const res = await fetch(`${url}?action=getStats`);
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error();
+    const s = json.stats;
+    el.innerHTML = `
+      <div class="stat-cell"><div class="stat-num">${s.total}</div><div class="stat-lbl">今月 合計</div></div>
+      <div class="stat-cell"><div class="stat-num">${s.initial}</div><div class="stat-lbl">初回</div></div>
+      <div class="stat-cell"><div class="stat-num">${s.repeat}</div><div class="stat-lbl">再カンファ</div></div>
+      <div class="stat-cell"><div class="stat-num">${s.outOfWindow}</div><div class="stat-lbl">2-4日目外</div></div>`;
+  } catch (_) {
+    el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">集計を読み込めません</div></div>`;
+  }
+}
+
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.classList.remove('show'), 2600);
+}
+</script>
+</body>
+</html>
