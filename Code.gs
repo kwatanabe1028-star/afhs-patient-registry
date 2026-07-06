@@ -20,15 +20,14 @@
 const SHEET_NAME = 'AFHS実施台帳';
 
 const HEADERS = [
-  '送信日時',       // A
-  '実施日',         // B
-  '患者ID',         // C
-  'HCU入室日数',    // D
-  '診療科',         // E
-  '疾患',           // F
-  '実施区分',       // G
-  '回数',           // H
-  'メモ',           // I
+  '実施日',         // A
+  '患者ID',         // B
+  'HCU入室日数',    // C
+  '診療科',         // D
+  '疾患',           // E
+  '実施区分',       // F
+  '回数',           // G
+  'メモ',           // H
 ];
 
 // ── POST 受信 ──────────────────────────────────────
@@ -40,7 +39,6 @@ function doPost(e) {
     }
     const sheet = getOrCreateSheet();
     const row = [
-      new Date(),
       data.date           || '',
       data.patientId      || '',
       Number(data.hcuDay) || '',
@@ -104,15 +102,15 @@ function findPatientHistory(patientId) {
   const records = [];
 
   for (let r = 1; r < rows.length; r++) {
-    if (String(rows[r][2]).trim() !== id) continue;
-    const sessionNum = Number(rows[r][7]) || 0;
+    if (String(rows[r][1]).trim() !== id) continue;
+    const sessionNum = Number(rows[r][6]) || 0;
     if (sessionNum > maxSession) maxSession = sessionNum;
-    department = rows[r][4] || department;
-    diagnosis  = rows[r][5] || diagnosis;
+    department = rows[r][3] || department;
+    diagnosis  = rows[r][4] || diagnosis;
     records.push({
-      date: formatDate(rows[r][1]),
-      hcuDay: rows[r][3],
-      sessionType: rows[r][6],
+      date: formatDate(rows[r][0]),
+      hcuDay: rows[r][2],
+      sessionType: rows[r][5],
       sessionNumber: sessionNum,
     });
   }
@@ -147,12 +145,12 @@ function getMonthlyStats() {
   let outOfWindow = 0;
 
   for (let r = 1; r < rows.length; r++) {
-    const d = new Date(rows[r][1]);
+    const d = new Date(rows[r][0]);
     if (isNaN(d) || d < monthStart || d >= monthEnd) continue;
     total++;
-    const sessionNum = Number(rows[r][7]) || 0;
-    const hcuDay = Number(rows[r][3]) || 0;
-    const sessionType = String(rows[r][6]);
+    const sessionNum = Number(rows[r][6]) || 0;
+    const hcuDay = Number(rows[r][2]) || 0;
+    const sessionType = String(rows[r][5]);
     if (sessionNum === 1 || sessionType === '初回カンファ') initial++;
     if (sessionNum > 1 || sessionType === '再カンファ') repeat++;
     if ((sessionNum === 1 || sessionType === '初回カンファ') && (hcuDay < 2 || hcuDay > 4)) {
@@ -180,9 +178,8 @@ function getOrCreateSheet() {
     headerRange.setFontColor('#ffffff');
     headerRange.setFontWeight('bold');
     sheet.setFrozenRows(1);
-    sheet.setColumnWidth(1, 160);
-    sheet.setColumnWidth(2, 100);
-    sheet.setColumnWidth(9, 240);
+    sheet.setColumnWidth(1, 100);
+    sheet.setColumnWidth(8, 240);
   }
   return sheet;
 }
