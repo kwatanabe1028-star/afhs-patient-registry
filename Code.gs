@@ -4,10 +4,14 @@
  * 【セットアップ】
  * 1. Google スプレッドシートを新規作成
  * 2. 拡張機能 → Apps Script にこのコードを貼り付けて保存
- * 3. デプロイ → 新しいデプロイ → 種類:「ウェブアプリ」
+ * 3. プロジェクトの設定 → スクリプト プロパティ → `API_TOKEN` に
+ *    十分ランダムな文字列を設定（このファイルは公開リポジトリに
+ *    コミットされるため、トークンをコードに直書きしないこと）
+ * 4. デプロイ → 新しいデプロイ → 種類:「ウェブアプリ」
  *    - 実行ユーザー: 自分
  *    - アクセスできるユーザー: 全員
- * 4. デプロイ URL を GitHub Pages アプリの設定画面に入力
+ * 5. デプロイ URL とスクリプト プロパティに設定したトークンを
+ *    GitHub Pages アプリの設定画面に入力
  *
  * 【シート】
  * - AFHS実施台帳 … 送信データ（自動作成）
@@ -31,6 +35,9 @@ const HEADERS = [
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
+    if (!isAuthorized_(data.token)) {
+      return jsonResponse({ status: 'error', message: 'unauthorized' });
+    }
     const sheet = getOrCreateSheet();
     const row = [
       new Date(),
@@ -56,6 +63,9 @@ function doGet(e) {
   const patientId = e && e.parameter && e.parameter.patientId;
 
   if (action === 'getPatient' && patientId) {
+    if (!isAuthorized_(e.parameter.token)) {
+      return jsonResponse({ status: 'error', message: 'unauthorized' });
+    }
     try {
       return jsonResponse({ status: 'ok', patient: findPatientHistory(patientId) });
     } catch (err) {
@@ -64,6 +74,9 @@ function doGet(e) {
   }
 
   if (action === 'getStats') {
+    if (!isAuthorized_(e.parameter.token)) {
+      return jsonResponse({ status: 'error', message: 'unauthorized' });
+    }
     try {
       return jsonResponse({ status: 'ok', stats: getMonthlyStats() });
     } catch (err) {
@@ -151,6 +164,11 @@ function getMonthlyStats() {
 }
 
 // ── ヘルパー ───────────────────────────────────────
+function isAuthorized_(token) {
+  const expected = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
+  return !!expected && token === expected;
+}
+
 function getOrCreateSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
