@@ -402,7 +402,7 @@ window.addEventListener('DOMContentLoaded', () => {
   migrateOldPending();
   updatePendingBanner();
 
-  ['inp-hcuday', 'inp-session'].forEach(id => {
+  ['inp-date', 'inp-hcuday', 'inp-session'].forEach(id => {
     document.getElementById(id).addEventListener('input', updateWarnings);
   });
   document.querySelectorAll('input[name="sessionType"]').forEach(el => {
@@ -503,6 +503,7 @@ function updateWarnings() {
   const warnEl = document.getElementById('validation-warn');
   const warnings = [];
   const type = getSessionType();
+  const date = document.getElementById('inp-date').value;
   const hcuDay = Number(document.getElementById('inp-hcuday').value);
   const session = Number(document.getElementById('inp-session').value);
   const dept = document.getElementById('inp-dept').value;
@@ -519,6 +520,9 @@ function updateWarnings() {
   }
   if (dept === 'その他' && !memo) {
     warnings.push('診療科「その他」の場合、メモに科名を書くことを推奨します');
+  }
+  if (date && session && _patientHistory?.records?.some(r => r.date === date && r.sessionNumber === session)) {
+    warnings.push('同じ実施日・回数の記録が既にあります（重複送信の可能性）');
   }
 
   if (warnings.length) {
