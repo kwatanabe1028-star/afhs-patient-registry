@@ -554,6 +554,13 @@ function validatePayload(p) {
   return null;
 }
 
+function friendlyErrorMessage(message) {
+  if (message === 'unauthorized') {
+    return '設定のGAS URL・アクセストークンが正しいか確認してください';
+  }
+  return 'エラー: ' + (message || '不明なエラー');
+}
+
 function getQueue() {
   try { return JSON.parse(ls('pendingQueue') || '[]'); } catch (_) { return []; }
 }
@@ -626,7 +633,7 @@ async function flushQueue() {
       });
       const json = await res.json();
       if (json.status !== 'ok') {
-        toast('エラー: ' + (json.message || '不明'));
+        toast(friendlyErrorMessage(json.message));
         break;
       }
       q.shift();
@@ -690,7 +697,10 @@ async function loadStats() {
     const token = ls('apiToken') || '';
     const res = await fetch(`${url}?action=getStats&token=${encodeURIComponent(token)}`);
     const json = await res.json();
-    if (json.status !== 'ok') throw new Error();
+    if (json.status !== 'ok') {
+      el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">${friendlyErrorMessage(json.message)}</div></div>`;
+      return;
+    }
     const s = json.stats;
     el.innerHTML = `
       <div class="stat-cell"><div class="stat-num">${s.total}</div><div class="stat-lbl">今月 合計</div></div>
