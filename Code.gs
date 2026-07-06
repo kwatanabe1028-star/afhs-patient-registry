@@ -39,7 +39,7 @@ function doPost(e) {
     }
     const sheet = getOrCreateSheet();
     const row = [
-      data.date           || '',
+      toSlashDate_(data.date),
       data.patientId      || '',
       Number(data.hcuDay) || '',
       data.department     || '',
@@ -162,6 +162,10 @@ function getMonthlyStats() {
 }
 
 // ── ヘルパー ───────────────────────────────────────
+function toSlashDate_(ymd) {
+  return ymd ? String(ymd).replace(/-/g, '/') : '';
+}
+
 function isAuthorized_(token) {
   const expected = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
   return !!expected && token === expected;
