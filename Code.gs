@@ -48,7 +48,8 @@ function doPost(e) {
       Number(data.sessionNumber) || '',
       data.memo           || '',
     ];
-    sheet.appendRow(row);
+    const targetRow = getNextDataRow_(sheet);
+    sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
     return jsonResponse({ status: 'ok' });
   } catch (err) {
     return jsonResponse({ status: 'error', message: err.message });
@@ -157,6 +158,17 @@ function getMonthlyStats() {
 }
 
 // ── ヘルパー ───────────────────────────────────────
+// 実施日（A列）だけを見て「本当の最終行」を判定する。
+// I列などに数式（ARRAYFORMULA等）があると、空文字の見かけ上の内容に
+// appendRow/getLastRowがだまされて、遠く離れた行に書き込んでしまうため。
+function getNextDataRow_(sheet) {
+  const colA = sheet.getRange(1, 1, sheet.getMaxRows(), 1).getValues();
+  for (let r = colA.length - 1; r >= 1; r--) {
+    if (colA[r][0] !== '') return r + 2;
+  }
+  return 2;
+}
+
 function toSlashDate_(ymd) {
   return ymd ? String(ymd).replace(/-/g, '/') : '';
 }
