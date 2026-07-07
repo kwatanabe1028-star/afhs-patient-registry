@@ -449,6 +449,10 @@ function setTestMode(on) {
 
 function isTestMode() { return ls('testMode') === 'true'; }
 
+function setSubmitDisabled(disabled) {
+  document.getElementById('btn-submit').disabled = disabled;
+}
+
 function getSessionType() {
   return document.querySelector('input[name="sessionType"]:checked')?.value || '';
 }
@@ -589,6 +593,8 @@ function migrateOldPending() {
 }
 
 async function submitForm() {
+  if (_sending) { toast('送信中です。しばらくお待ちください'); return; }
+
   const payload = buildPayload();
   const err = validatePayload(payload);
   if (err) { toast(err); return; }
@@ -604,11 +610,18 @@ async function submitForm() {
   const url = ls('gasUrl');
   if (!url) { toast('設定で GAS URL を入力してください'); return; }
 
-  const q = getQueue();
-  q.push(payload);
-  saveQueue(q);
-  updatePendingBanner();
-  await flushQueue();
+  _sending = true;
+  setSubmitDisabled(true);
+  try {
+    const q = getQueue();
+    q.push(payload);
+    saveQueue(q);
+    updatePendingBanner();
+    await flushQueueBody();
+  } finally {
+    _sending = false;
+    setSubmitDisabled(false);
+  }
 }
 
 // キューを先頭から順に送信する。ネットワーク断・サーバーエラー時は
@@ -616,6 +629,16 @@ async function submitForm() {
 async function flushQueue() {
   if (_sending) { toast('送信中です'); return; }
   _sending = true;
+  setSubmitDisabled(true);
+  try {
+    await flushQueueBody();
+  } finally {
+    _sending = false;
+    setSubmitDisabled(false);
+  }
+}
+
+async function flushQueueBody() {
   const url = ls('gasUrl');
   const token = ls('apiToken') || '';
   let q = getQueue();
@@ -645,8 +668,6 @@ async function flushQueue() {
       break;
     }
   }
-
-  _sending = false;
 
   if (sentCount === initialCount && sentCount > 0) {
     toast('記録しました ✓');

@@ -150,8 +150,16 @@ function getMonthlyStats() {
     total++;
     const sessionNum = Number(rows[r][6]) || 0;
     const sessionType = String(rows[r][5]);
-    if (sessionNum === 1 || sessionType === '初回カンファ') initial++;
-    if (sessionNum > 1 || sessionType === '再カンファ') repeat++;
+    // 実施区分を優先し、初回・再カンファを排他的に分類する（二重カウント防止）
+    if (sessionType === '再カンファ') {
+      repeat++;
+    } else if (sessionType === '初回カンファ') {
+      initial++;
+    } else if (sessionNum > 1) {
+      repeat++;
+    } else {
+      initial++;
+    }
   }
 
   return { total, initial, repeat, month: Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM') };
