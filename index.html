@@ -400,6 +400,10 @@ window.addEventListener('DOMContentLoaded', () => {
   applyTestMode(ls('testMode') === 'true');
 
   migrateOldPending();
+  const removedInvalid = sanitizeQueue();
+  if (removedInvalid > 0) {
+    toast(`不完全な未送信データ ${removedInvalid} 件を破棄しました`);
+  }
   updatePendingBanner();
 
   ['inp-date', 'inp-hcuday', 'inp-session'].forEach(id => {
@@ -485,6 +489,43 @@ async function gasFetch(url, options = {}) {
   }
   const res = await fetch(url, { redirect: 'follow', ...options, headers });
   return parseGasResponse(res, { method });
+}
+
+// POST 送信後に getPatient でシート反映を確認（Failed to fetch 対策）
+async function verifyPostSaved(url, payload) {
+  const token = ls('apiToken') || '';
+  try {
+    const json = await gasFetch(
+      `${url}?action=getPatient&patientId=${encodeURIComponent(payload.patientId)}&token=${encodeURIComponent(token)}`
+    );
+    if (json.status !== 'ok' || !json.patient?.records) return false;
+    const session = Number(payload.sessionNumber);
+    return json.patient.records.some(r =>
+      r.date === payload.date && Number(r.sessionNumber) === session
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
+async function gasPost(url, payload) {
+  const token = ls('apiToken') || '';
+  const body = JSON.stringify({ ...payload, token });
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body,
+    });
+    return await parseGasResponse(res, { method: 'POST' });
+  } catch (err) {
+    if (await verifyPostSaved(url, payload)) {
+      console.warn('[GAS] POST failed to read response but record verified on server', err);
+      return { status: 'ok', verified: true };
+    }
+    throw err;
+  }
 }
 
 function getSessionType() {
@@ -606,6 +647,15 @@ function getQueue() {
 
 function saveQueue(q) { lss('pendingQueue', JSON.stringify(q)); }
 
+// 不完全なキュー項目を除去する（再送信時の3列だけ書き込みを防ぐ）
+function sanitizeQueue() {
+  const q = getQueue();
+  const valid = q.filter(p => !validatePayload(p));
+  const removed = q.length - valid.length;
+  if (removed > 0) saveQueue(valid);
+  return removed;
+}
+
 function updatePendingBanner() {
   const q = getQueue();
   const banner = document.getElementById('pending-banner');
@@ -618,7 +668,7 @@ function migrateOldPending() {
   if (!old) return;
   try {
     const { payload } = JSON.parse(old);
-    if (payload) {
+    if (payload && !validatePayload(payload)) {
       const q = getQueue();
       q.push(payload);
       saveQueue(q);
@@ -675,19 +725,31 @@ async function flushQueue() {
 
 async function flushQueueBody() {
   const url = ls('gasUrl');
-  const token = ls('apiToken') || '';
+  const skipped = sanitizeQueue();
+  if (skipped > 0) toast(`不完全な未送信データ ${skipped} 件を破棄しました`);
+
   let q = getQueue();
   const initialCount = q.length;
   let sentCount = 0;
 
+  if (initialCount === 0) {
+    updatePendingBanner();
+    return;
+  }
+
   toast('送信中…');
   while (q.length > 0) {
     const payload = q[0];
+    const validationErr = validatePayload(payload);
+    if (validationErr) {
+      q.shift();
+      saveQueue(q);
+      updatePendingBanner();
+      toast('不完全な未送信データを破棄しました');
+      continue;
+    }
     try {
-      const json = await gasFetch(url, {
-        method: 'POST',
-        body: JSON.stringify({ ...payload, token }),
-      });
+      const json = await gasPost(url, payload);
       if (json.status !== 'ok') {
         toast(friendlyErrorMessage(json.message));
         break;
