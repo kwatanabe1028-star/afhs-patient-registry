@@ -504,14 +504,10 @@ function updateWarnings() {
   const warnings = [];
   const type = getSessionType();
   const date = document.getElementById('inp-date').value;
-  const hcuDay = Number(document.getElementById('inp-hcuday').value);
   const session = Number(document.getElementById('inp-session').value);
   const dept = document.getElementById('inp-dept').value;
   const memo = document.getElementById('inp-memo').value.trim();
 
-  if (type === '初回カンファ' && hcuDay && (hcuDay < 2 || hcuDay > 4)) {
-    warnings.push(`初回カンファの入室日数は原則 <strong>2〜4 日目</strong> です（現在：${hcuDay} 日目）`);
-  }
   if (type === '初回カンファ' && session !== 1) {
     warnings.push(`初回カンファなのに回数が <strong>${session}</strong> です（通常は 1）`);
   }
