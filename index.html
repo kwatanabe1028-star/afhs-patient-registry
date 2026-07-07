@@ -143,7 +143,7 @@
     }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .stats-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
     }
     .stat-cell {
       background: color-mix(in srgb, var(--dark) 4%, var(--white));
@@ -709,8 +709,7 @@ async function loadStats() {
     el.innerHTML = `
       <div class="stat-cell"><div class="stat-num">${s.total}</div><div class="stat-lbl">今月 合計</div></div>
       <div class="stat-cell"><div class="stat-num">${s.initial}</div><div class="stat-lbl">初回</div></div>
-      <div class="stat-cell"><div class="stat-num">${s.repeat}</div><div class="stat-lbl">再カンファ</div></div>
-      <div class="stat-cell"><div class="stat-num">${s.outOfWindow}</div><div class="stat-lbl">2-4日目外</div></div>`;
+      <div class="stat-cell"><div class="stat-num">${s.repeat}</div><div class="stat-lbl">再カンファ</div></div>`;
   } catch (_) {
     el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">集計を読み込めません</div></div>`;
   }

@@ -129,7 +129,7 @@ function findPatientHistory(patientId) {
 function getMonthlyStats() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   if (!sheet) {
-    return { total: 0, initial: 0, repeat: 0, outOfWindow: 0 };
+    return { total: 0, initial: 0, repeat: 0 };
   }
 
   const now = new Date();
@@ -142,23 +142,18 @@ function getMonthlyStats() {
   let total = 0;
   let initial = 0;
   let repeat = 0;
-  let outOfWindow = 0;
 
   for (let r = 1; r < rows.length; r++) {
     const d = new Date(rows[r][0]);
     if (isNaN(d) || d < monthStart || d >= monthEnd) continue;
     total++;
     const sessionNum = Number(rows[r][6]) || 0;
-    const hcuDay = Number(rows[r][2]) || 0;
     const sessionType = String(rows[r][5]);
     if (sessionNum === 1 || sessionType === '初回カンファ') initial++;
     if (sessionNum > 1 || sessionType === '再カンファ') repeat++;
-    if ((sessionNum === 1 || sessionType === '初回カンファ') && (hcuDay < 2 || hcuDay > 4)) {
-      outOfWindow++;
-    }
   }
 
-  return { total, initial, repeat, outOfWindow, month: Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM') };
+  return { total, initial, repeat, month: Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM') };
 }
 
 // ── ヘルパー ───────────────────────────────────────
