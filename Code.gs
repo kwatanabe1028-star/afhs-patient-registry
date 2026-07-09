@@ -32,10 +32,18 @@ const HEADERS = [
 
 // ── POST 受信 ──────────────────────────────────────
 function doPost(e) {
+  const rawBody = e && e.postData && e.postData.contents;
   try {
-    const data = JSON.parse(e.postData.contents);
+    const data = JSON.parse(rawBody);
     if (!isAuthorized_(data.token)) {
       return jsonResponse({ status: 'error', message: 'unauthorized' });
+    }
+    // 歯抜けの行が黙って作られるのを防ぐ。原因（同時送信の衝突や通信経路での
+    // 欠落等）が何であれ、必須項目が欠けた状態では書き込まずエラーを返す。
+    const missing = missingFields_(data);
+    if (missing.length > 0) {
+      console.log('doPost rejected: missing=' + missing.join(',') + ' body=' + rawBody);
+      return jsonResponse({ status: 'error', message: '必須項目が届いていません: ' + missing.join('、') });
     }
     const sheet = getOrCreateSheet();
     const row = [
@@ -52,8 +60,19 @@ function doPost(e) {
     sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
     return jsonResponse({ status: 'ok' });
   } catch (err) {
+    console.log('doPost error: ' + err.message + ' body=' + rawBody);
     return jsonResponse({ status: 'error', message: err.message });
   }
+}
+
+// 必須項目（メモ以外）が欠けていないか確認する。フロント側の
+// validatePayload と同じ項目セットを、サーバー側でも独立にチェックする。
+function missingFields_(data) {
+  const required = ['date', 'patientId', 'hcuDay', 'department', 'diagnosis', 'sessionType', 'sessionNumber'];
+  return required.filter(key => {
+    const v = data[key];
+    return v === undefined || v === null || String(v).trim() === '';
+  });
 }
 
 // ── GET ────────────────────────────────────────────
