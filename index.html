@@ -325,57 +325,6 @@
     }
     .warn { font-size: 12px; color: var(--warn); margin-bottom: 10px; }
 
-    /* 白板クローズアウト（台帳入力のあと） */
-    .band--board {
-      background: color-mix(in srgb, var(--warn) 9%, var(--white));
-      border-bottom: 3px solid var(--warn);
-      padding: 20px 18px 22px;
-    }
-    .board-kicker {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
-      color: var(--warn); margin-bottom: 8px;
-    }
-    .board-kicker .tag {
-      background: var(--warn); color: #fff;
-      padding: 3px 8px; border-radius: 4px; letter-spacing: 0.04em;
-    }
-    .band--board .h2 { color: var(--dark); margin-bottom: 6px; }
-    .board-lead {
-      font-size: 14px; color: var(--muted); margin-bottom: 14px; font-weight: 600;
-    }
-    .board-steps {
-      list-style: none; display: grid; gap: 10px; margin: 0 0 14px;
-    }
-    .board-steps li {
-      display: grid; grid-template-columns: 36px 1fr; gap: 12px;
-      align-items: start;
-      background: var(--white);
-      border: 1px solid color-mix(in srgb, var(--warn) 22%, var(--white));
-      border-radius: 10px; padding: 12px 14px;
-      box-shadow: var(--shadow-s);
-    }
-    .board-steps .n {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: var(--warn); color: #fff;
-      display: grid; place-items: center;
-      font-size: 16px; font-weight: 800;
-    }
-    .board-steps .t {
-      font-size: 15px; font-weight: 700; line-height: 1.45; color: var(--dark);
-      padding-top: 6px;
-    }
-    .board-must {
-      background: var(--warn); color: #fff;
-      border-radius: 10px; padding: 14px 16px;
-      font-size: 16px; font-weight: 800; line-height: 1.45;
-      text-align: center;
-      box-shadow: 0 4px 14px color-mix(in srgb, var(--warn) 35%, transparent);
-    }
-    .board-must small {
-      display: block; margin-top: 4px;
-      font-size: 13px; font-weight: 700; opacity: 0.92;
-    }
     .hidden { display: none !important; }
     .modal {
       position: fixed; inset: 0; background: color-mix(in srgb, var(--dark) 45%, transparent);
@@ -408,7 +357,6 @@
   </header>
 
   <nav class="nav-chips" aria-label="セクション">
-    <a href="#board">白板</a>
     <a href="#stats">集計</a>
     <a href="#why">意義</a>
     <a href="#how">運用</a>
@@ -416,30 +364,6 @@
     <a href="#notes">メモ</a>
     <a href="registry.html">台帳入力</a>
   </nav>
-
-  <section class="band band--board" id="board">
-    <div class="board-kicker"><span class="tag">必須</span>台帳入力のあと</div>
-    <div class="h2">白板マグネット</div>
-    <p class="board-lead">台帳に記録したら、ホワイトボードを必ず更新する。</p>
-    <ol class="board-steps">
-      <li>
-        <span class="n" aria-hidden="true">1</span>
-        <span class="t">本日の「AFHS」マグネットを外す</span>
-      </li>
-      <li>
-        <span class="n" aria-hidden="true">2</span>
-        <span class="t">「カンファレンス済み」マグネットを貼り、日付を書く</span>
-      </li>
-      <li>
-        <span class="n" aria-hidden="true">3</span>
-        <span class="t">明日の候補患者にマグネットを貼る</span>
-      </li>
-    </ol>
-    <div class="board-must" role="note">
-      必ずこれを行ってから業務に戻ること
-      <small>白板更新が終わるまで、次の業務に入らない</small>
-    </div>
-  </section>
 
   <section class="band band--intervene" id="stats">
     <div class="intervene-head">
