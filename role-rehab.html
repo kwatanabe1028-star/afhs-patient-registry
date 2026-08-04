@@ -59,6 +59,14 @@
     textarea { min-height: 88px; }
     .check { display: flex; gap: 8px; font-size: 13px; color: var(--muted); margin: 8px 0 12px; }
     .check input { width: 18px; height: 18px; accent-color: var(--a3); }
+    .check-required {
+      color: var(--warn); font-weight: 700;
+      background: color-mix(in srgb, var(--warn) 10%, var(--white));
+      border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--white));
+      border-radius: 8px; padding: 10px 12px;
+    }
+    .check-required input { accent-color: var(--warn); }
+    .check-required .req { display: inline-block; margin-left: 4px; font-size: 12px; font-weight: 800; }
     .warn { font-size: 12px; color: var(--warn); margin-bottom: 10px; }
     .btn {
       width: 100%; padding: 12px; border: none; border-radius: 9px; font-size: 14px; font-weight: 700;
@@ -99,7 +107,7 @@
       <select id="note-type"></select>
       <label for="note-body">本文</label>
       <textarea id="note-body" maxlength="500"></textarea>
-      <label class="check"><input type="checkbox" id="note-privacy"><span>患者を特定できる情報を含めていない</span></label>
+      <label class="check check-required"><input type="checkbox" id="note-privacy"><span>患者を特定できる情報を含めていない<span class="req">（必ずチェック）</span></span></label>
       <button class="btn" type="button" onclick="submitNote()">投稿する</button>
     </div>
   </section>
