@@ -79,18 +79,50 @@
       border-bottom: 1px solid color-mix(in srgb, var(--a1) 18%, var(--white));
     }
     label.field-label {
-      display: block; font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; font-weight: 600;
       color: var(--subtle); margin-bottom: 6px;
+    }
+    .req-badge {
+      display: inline-block;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+      color: #fff; background: var(--warn);
+      padding: 2px 7px; border-radius: 999px; line-height: 1.4;
+    }
+    .opt-badge {
+      display: inline-block;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+      color: var(--subtle); background: color-mix(in srgb, var(--dark) 8%, var(--white));
+      padding: 2px 7px; border-radius: 999px; line-height: 1.4;
     }
     input[type="text"], input[type="date"], input[type="number"], select, textarea {
       width: 100%; padding: 11px 12px; border: 1.5px solid var(--border);
       border-radius: 8px; font-size: 16px; font-family: inherit;
       background: var(--white); color: var(--dark);
+      transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     }
     textarea { min-height: 72px; resize: vertical; }
     input:focus, select:focus, textarea:focus {
       outline: none; border-color: var(--a3);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--a3) 18%, transparent);
+    }
+    /* 必須・未入力 */
+    .field-control.is-empty {
+      background: color-mix(in srgb, var(--warn) 12%, var(--white));
+      border-color: color-mix(in srgb, var(--warn) 55%, var(--white));
+    }
+    /* 必須・入力済み */
+    .field-control.is-filled {
+      background: color-mix(in srgb, var(--a1) 14%, var(--white));
+      border-color: color-mix(in srgb, var(--a3) 55%, var(--white));
+    }
+    .field-control.is-filled:focus {
+      border-color: var(--a3);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--a3) 18%, transparent);
+    }
+    .radio-group.is-filled .radio-item:has(input:checked) {
+      border-color: var(--a3);
+      background: color-mix(in srgb, var(--a1) 14%, var(--white));
     }
     .field { margin-bottom: 12px; }
     .field:last-child { margin-bottom: 0; }
@@ -153,16 +185,18 @@
     .stat-lbl { font-size: 11px; color: var(--subtle); margin-top: 2px; }
     .board-popup {
       position: fixed; inset: 0; z-index: 300;
-      background: color-mix(in srgb, var(--dark) 50%, transparent);
+      background: color-mix(in srgb, var(--dark) 62%, transparent);
       display: flex; align-items: center; justify-content: center;
       padding: 16px;
     }
     .board-popup.hidden { display: none !important; }
     .board-popup-card {
-      background: var(--white); border-radius: 14px;
+      background: linear-gradient(165deg, #FFF1DF 0%, #F7E4C8 100%);
+      border: 2px solid var(--warn);
+      border-radius: 14px;
       width: min(440px, 100%); max-height: 90vh; overflow: auto;
       padding: 20px 18px 18px;
-      box-shadow: 0 12px 40px color-mix(in srgb, var(--dark) 28%, transparent);
+      box-shadow: 0 12px 40px color-mix(in srgb, var(--dark) 35%, transparent);
     }
     .board-popup-card .ok-line {
       text-align: center; font-size: 18px; font-weight: 800;
@@ -172,7 +206,7 @@
       text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 14px;
     }
     .board-must-card {
-      background: color-mix(in srgb, var(--warn) 10%, var(--white));
+      background: color-mix(in srgb, var(--warn) 14%, #fff);
       border: 2px solid var(--warn); border-radius: 10px;
       padding: 14px; margin-bottom: 14px;
     }
@@ -258,16 +292,16 @@
       <div class="card">
         <div class="card-title">基本情報</div>
         <div class="field">
-          <label class="field-label" for="inp-date">実施日</label>
-          <input type="date" id="inp-date">
+          <label class="field-label" for="inp-date">実施日 <span class="req-badge">必須</span></label>
+          <input class="field-control" type="date" id="inp-date" required>
         </div>
         <div class="field">
-          <label class="field-label" for="inp-patient">患者 ID</label>
-          <input type="text" id="inp-patient" inputmode="numeric" placeholder="例：12345" onblur="lookupPatient()">
+          <label class="field-label" for="inp-patient">患者 ID <span class="req-badge">必須</span></label>
+          <input class="field-control" type="text" id="inp-patient" inputmode="numeric" placeholder="例：12345" onblur="lookupPatient()" required>
         </div>
         <div class="field">
-          <label class="field-label" for="inp-hcuday">HCU 入室日数</label>
-          <input type="number" id="inp-hcuday" min="1" placeholder="例：3（入室日=1日目）">
+          <label class="field-label" for="inp-hcuday">HCU 入室日数 <span class="req-badge">必須</span></label>
+          <input class="field-control" type="number" id="inp-hcuday" min="1" placeholder="例：3（入室日=1日目）" required>
         </div>
       </div>
 
@@ -277,20 +311,20 @@
       <div class="card">
         <div class="card-title">診療情報</div>
         <div class="field">
-          <label class="field-label" for="inp-dept">診療科</label>
-          <select id="inp-dept">
+          <label class="field-label" for="inp-dept">診療科 <span class="req-badge">必須</span></label>
+          <select class="field-control" id="inp-dept" required>
             <option value="">選択してください</option>
           </select>
         </div>
         <div class="field">
-          <label class="field-label" for="inp-dx">疾患（短く）</label>
-          <input type="text" id="inp-dx" placeholder="例：大腸癌術後">
+          <label class="field-label" for="inp-dx">疾患（短く） <span class="req-badge">必須</span></label>
+          <input class="field-control" type="text" id="inp-dx" placeholder="例：大腸癌術後" required>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">実施区分</div>
-        <div class="radio-group" id="session-type-group">
+        <div class="card-title">実施区分 <span class="req-badge">必須</span></div>
+        <div class="radio-group is-filled" id="session-type-group">
           <label class="radio-item">
             <input type="radio" name="sessionType" value="初回カンファ" checked onchange="onSessionTypeChange()">
             初回カンファ
@@ -305,13 +339,13 @@
           </label>
         </div>
         <div class="field" style="margin-top:12px">
-          <label class="field-label" for="inp-session">回数</label>
-          <input type="number" id="inp-session" min="1" value="1">
+          <label class="field-label" for="inp-session">回数 <span class="req-badge">必須</span></label>
+          <input class="field-control" type="number" id="inp-session" min="1" value="1" required>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">メモ（任意）</div>
+        <div class="card-title">メモ <span class="opt-badge">任意</span></div>
         <textarea id="inp-memo" placeholder="再カンファ理由、診療科「その他」の科名など"></textarea>
       </div>
 
@@ -442,13 +476,23 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   updatePendingBanner();
 
-  ['inp-date', 'inp-hcuday', 'inp-session'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateWarnings);
+  ['inp-date', 'inp-hcuday', 'inp-session', 'inp-patient', 'inp-dx'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      updateWarnings();
+      updateFieldStates();
+    });
+  });
+  document.getElementById('inp-dept').addEventListener('change', () => {
+    updateWarnings();
+    updateFieldStates();
   });
   document.querySelectorAll('input[name="sessionType"]').forEach(el => {
-    el.addEventListener('change', updateWarnings);
+    el.addEventListener('change', () => {
+      updateWarnings();
+      updateFieldStates();
+    });
   });
-
+  updateFieldStates();
   loadStats();
 });
 
@@ -577,6 +621,7 @@ function onSessionTypeChange() {
     sessionEl.value = _patientHistory.suggestedSession || 2;
   }
   updateWarnings();
+  updateFieldStates();
 }
 
 async function lookupPatient() {
@@ -612,6 +657,7 @@ async function lookupPatient() {
       `<br>診療科・疾患を前回値で入力しました`;
     banner.classList.remove('hidden');
     updateWarnings();
+    updateFieldStates();
   } catch (_) { /* silent */ }
 }
 
@@ -657,6 +703,30 @@ function buildPayload() {
     memo: document.getElementById('inp-memo').value.trim(),
     token: ls('apiToken') || '',
   };
+}
+
+function updateFieldStates() {
+  const specs = [
+    { id: 'inp-date', ok: el => !!el.value },
+    { id: 'inp-patient', ok: el => !!el.value.trim() },
+    { id: 'inp-hcuday', ok: el => Number(el.value) >= 1 },
+    { id: 'inp-dept', ok: el => !!el.value },
+    { id: 'inp-dx', ok: el => !!el.value.trim() },
+    { id: 'inp-session', ok: el => Number(el.value) >= 1 },
+  ];
+  specs.forEach(({ id, ok }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const filled = ok(el);
+    el.classList.toggle('is-filled', filled);
+    el.classList.toggle('is-empty', !filled);
+  });
+  const group = document.getElementById('session-type-group');
+  if (group) {
+    const has = !!document.querySelector('input[name="sessionType"]:checked');
+    group.classList.toggle('is-filled', has);
+    group.classList.toggle('is-empty', !has);
+  }
 }
 
 function validatePayload(p) {
@@ -845,6 +915,7 @@ function resetForm() {
   const t = new Date();
   document.getElementById('inp-date').value =
     `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
+  updateFieldStates();
   goScreen('screen-form');
 }
 
