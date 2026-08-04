@@ -61,6 +61,14 @@
       font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
       cursor: pointer; font-family: inherit; text-decoration: none;
     }
+    .link-btn--registry {
+      background: #fff;
+      color: var(--a3);
+      border: none;
+      font-size: 15px; font-weight: 800;
+      padding: 9px 16px; border-radius: 8px;
+      box-shadow: 0 2px 10px color-mix(in srgb, var(--dark) 25%, transparent);
+    }
     .nav-chips {
       position: sticky; top: 52px; z-index: 90;
       background: color-mix(in srgb, var(--bg) 92%, var(--white));
@@ -75,6 +83,14 @@
       border: 1px solid color-mix(in srgb, var(--a3) 28%, var(--white));
     }
     .nav-chips a:hover { background: color-mix(in srgb, var(--a1) 12%, var(--white)); }
+    .nav-chips a.nav-registry {
+      background: linear-gradient(118deg, var(--a3), var(--a5));
+      color: #fff;
+      border-color: transparent;
+      font-size: 14px;
+      padding: 9px 16px;
+      box-shadow: 0 3px 12px color-mix(in srgb, var(--a3) 35%, transparent);
+    }
     .band {
       padding: 28px 18px 32px;
       background: color-mix(in srgb, var(--a1) 14%, var(--bg));
@@ -290,6 +306,36 @@
       color: var(--white);
       box-shadow: 0 4px 14px color-mix(in srgb, var(--a3) 35%, transparent);
     }
+    .btn-registry {
+      width: 100%;
+      min-height: 58px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      background: linear-gradient(118deg, var(--a3), var(--a6));
+      color: #fff;
+      border: none;
+      box-shadow:
+        0 6px 20px color-mix(in srgb, var(--a3) 40%, transparent),
+        0 0 0 3px color-mix(in srgb, var(--a3) 18%, transparent);
+    }
+    .btn-row--registry {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    @media (min-width: 560px) {
+      .btn-row--registry {
+        grid-template-columns: 1.4fr 1fr 1fr;
+        align-items: stretch;
+      }
+      .btn-row--registry .btn-registry { width: 100%; }
+      .btn-row--registry .btn-outline {
+        min-height: 58px; font-size: 14px; font-weight: 700;
+      }
+    }
     .btn-outline {
       background: var(--white); color: var(--a3);
       border: 1.5px solid color-mix(in srgb, var(--a3) 40%, var(--white));
@@ -412,7 +458,7 @@
   <header class="header">
     <h1>AFHS<span class="sub">板橋中央 HCU</span></h1>
     <div class="header-right">
-      <a class="link-btn" href="registry.html">台帳入力</a>
+      <a class="link-btn link-btn--registry" href="registry.html">台帳入力</a>
       <button class="settings-btn" type="button" onclick="openSettings()">⚙ 設定</button>
     </div>
   </header>
@@ -423,7 +469,7 @@
     <a href="#how">運用</a>
     <a href="#scores">スコア</a>
     <a href="#notes">メモ</a>
-    <a href="registry.html">台帳入力</a>
+    <a class="nav-registry" href="registry.html">台帳入力</a>
   </nav>
 
   <section class="band band--intervene" id="stats">
@@ -484,8 +530,8 @@
       <span class="line">司会は専従医。</span>
     </p>
     <p class="how-note">医師の運用手順は Notion。</p>
-    <div class="btn-row">
-      <a class="btn btn-primary" href="registry.html">台帳入力</a>
+    <div class="btn-row btn-row--registry">
+      <a class="btn btn-registry" href="registry.html">台帳入力</a>
       <a class="btn btn-outline" id="btn-notion" target="_blank" rel="noopener">医師の運用手順（Notion）</a>
       <button class="btn btn-outline" type="button" onclick="AFHS.openSheetWithTokenGate()">実施台帳（Googleスプレッドシート）</button>
     </div>
@@ -630,8 +676,8 @@
   </section>
 
   <section class="section" style="padding-top:0">
-    <div class="btn-row">
-      <a class="btn btn-primary" href="registry.html">台帳入力</a>
+    <div class="btn-row btn-row--registry">
+      <a class="btn btn-registry" href="registry.html">台帳入力</a>
       <a class="btn btn-outline" href="#" id="btn-notion-2" target="_blank" rel="noopener">医師の運用手順（Notion）</a>
       <button class="btn btn-outline" type="button" onclick="AFHS.openSheetWithTokenGate()">実施台帳（Googleスプレッドシート）</button>
     </div>
