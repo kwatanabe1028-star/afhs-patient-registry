@@ -158,7 +158,22 @@
       font-size: 28px; color: var(--a3);
     }
     .success-title { text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-    .success-sub { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+    .success-sub { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+    .board-must-card {
+      background: color-mix(in srgb, var(--warn) 10%, var(--white));
+      border: 2px solid var(--warn); border-radius: 10px;
+      padding: 14px; margin-bottom: 16px;
+    }
+    .board-must-card .must {
+      background: var(--warn); color: #fff; text-align: center;
+      font-size: 15px; font-weight: 800; border-radius: 8px;
+      padding: 10px 12px; margin-bottom: 12px;
+    }
+    .board-must-card ol {
+      margin: 0; padding-left: 1.3em; font-size: 14px; font-weight: 700;
+      line-height: 1.55; color: var(--dark);
+    }
+    .board-must-card li { margin-bottom: 6px; }
     .hidden { display: none !important; }
     .toggle-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -308,6 +323,14 @@
       <div class="success-icon">✓</div>
       <p class="success-title">記録しました</p>
       <p class="success-sub">スプレッドシートに 1 行追加されました</p>
+      <div class="board-must-card">
+        <div class="must">必ずこれを行ってから業務に戻ること</div>
+        <ol>
+          <li>本日の「AFHS」マグネットを外す</li>
+          <li>「カンファレンス済み」マグネットを貼り、日付を書く</li>
+          <li>明日の候補患者にマグネットを貼る</li>
+        </ol>
+      </div>
       <button class="btn btn-primary" onclick="resetForm()">続けて入力する</button>
     </div>
   </div>
