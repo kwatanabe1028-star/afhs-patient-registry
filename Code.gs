@@ -266,9 +266,7 @@ function getMonthlyStats() {
 
 // ── 現場メモ ───────────────────────────────────────
 function listNotes_(roleFilter, typeFilter, limit) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(NOTES_SHEET);
-  if (!sheet) return [];
-
+  const sheet = getOrCreateNotesSheet_();
   const rows = sheet.getDataRange().getValues();
   const notes = [];
   for (let r = rows.length - 1; r >= 1; r--) {

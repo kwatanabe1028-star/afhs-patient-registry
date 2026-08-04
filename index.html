@@ -508,6 +508,9 @@
   <section class="section" id="notes">
     <div class="eyebrow">NOTES</div>
     <div class="h2" style="margin-bottom:8px">メモ</div>
+    <p class="lead" style="margin-bottom:10px;font-size:14px">
+      交代・詰まり・変更希望を短く残す。投稿はシート「現場メモ」に蓄積される。
+    </p>
     <p class="warn">氏名・患者ID・ベッド番号は書かない</p>
 
     <div class="card">
@@ -523,7 +526,7 @@
       <label class="field-label" for="note-role">職種</label>
       <select id="note-role"></select>
       <label class="field-label" for="note-type">種別</label>
-      <select id="note-type"></select>
+      <select id="note-type" onchange="updateNotePlaceholder()"></select>
       <label class="field-label" for="note-body">本文</label>
       <textarea id="note-body" maxlength="500" placeholder="短く。患者を特定できる情報は書かない"></textarea>
       <label class="check">
@@ -673,6 +676,22 @@
     typeSel.innerHTML = AFHS.CONFIG.noteTypes.map(t => `<option value="${t}">${t}</option>`).join('');
     const pref = AFHS.ls('preferredRole');
     if (pref && AFHS.CONFIG.roles.includes(pref)) roleSel.value = pref;
+    updateNotePlaceholder();
+  }
+
+  const NOTE_PLACEHOLDERS = {
+    '引き継ぎ': '例: 土曜不在。持ち越し薬の確認は月曜朝にリーダーNsへ',
+    '変更希望': '例: Mealの目標kcalを白板でも見えるようにしたい',
+    '問題点': '例: 朝の対象患者と白板がズレることがある',
+    'イベント': '例: 来週火曜 4Mミニ勉強会 10分',
+    '一言': '例: 今日はMealが厚い。補食の提案まで落ちた',
+    '重要連絡': '例: 明日からカンファ開始を10:30に戻す',
+  };
+
+  function updateNotePlaceholder() {
+    const type = document.getElementById('note-type').value;
+    document.getElementById('note-body').placeholder =
+      NOTE_PLACEHOLDERS[type] || '短く。患者を特定できる情報は書かない';
   }
 
   async function refreshNotes() {
