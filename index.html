@@ -107,40 +107,116 @@
       margin-bottom: 10px; padding-bottom: 8px;
       border-bottom: 1px solid color-mix(in srgb, var(--a1) 18%, var(--white));
     }
-    .stats-wrap { display: grid; gap: 16px; }
+    /* 介入実績（AFHS_介入人数テンプレ 準拠） */
+    .band--intervene {
+      --iv-teal: #005D6F;
+      --iv-mint: #C8DBDF;
+      --iv-mist: #E4EEF0;
+      --iv-panel: #F2F4F1;
+      background:
+        radial-gradient(circle at 92% -10%, var(--iv-mist) 0 28%, transparent 29%),
+        radial-gradient(circle at -5% 110%, var(--iv-mist) 0 18%, transparent 19%),
+        #FAFBFA;
+      border-bottom: 1px solid color-mix(in srgb, var(--iv-teal) 14%, var(--bg));
+      color: var(--iv-teal);
+      position: relative;
+      overflow: hidden;
+    }
+    .intervene-head {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .afhs-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--iv-teal); color: #fff;
+      font-size: 14px; font-weight: 800; letter-spacing: 0.08em;
+      padding: 8px 14px; border-radius: 6px;
+    }
+    .intervene-title {
+      font-size: 22px; font-weight: 800; color: var(--iv-teal); letter-spacing: 0.04em;
+    }
+    .intervene-head .btn-outline {
+      margin-left: auto;
+      background: transparent; color: var(--iv-teal);
+      border: 1.5px solid color-mix(in srgb, var(--iv-teal) 35%, #fff);
+    }
+    .intervene-story {
+      font-size: clamp(18px, 3.2vw, 26px); font-weight: 700;
+      line-height: 1.45; color: #1a3a42; margin-bottom: 18px; max-width: 36em;
+    }
+    .intervene-story .hl {
+      color: var(--iv-teal); font-weight: 800;
+      border-bottom: 3px solid color-mix(in srgb, var(--iv-teal) 35%, transparent);
+    }
+    .intervene-rule {
+      width: min(220px, 40%); height: 4px; background: var(--iv-teal);
+      border-radius: 2px; margin: 0 0 22px;
+    }
+    .intervene-grid {
+      display: grid; gap: 18px; align-items: stretch;
+    }
     @media (min-width: 720px) {
-      .stats-wrap { grid-template-columns: 1fr 1fr; }
+      .intervene-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 22px; }
     }
-    .stat-block {
-      background: color-mix(in srgb, var(--white) 12%, transparent);
-      border: 1px solid color-mix(in srgb, var(--white) 18%, transparent);
-      border-radius: 12px; padding: 16px;
+    .month-ring {
+      aspect-ratio: 1; width: min(100%, 320px); margin: 0 auto;
+      border-radius: 50%; background: var(--iv-mint);
+      display: grid; place-items: center; padding: 8%;
     }
-    .band:not(.band--dark) .stat-block {
-      background: var(--white); border-color: var(--border);
+    .month-disc {
+      width: 100%; aspect-ratio: 1; border-radius: 50%;
+      background: var(--iv-teal); color: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 12px;
     }
-    .stat-head {
-      display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;
+    .month-disc .m-label {
+      font-size: clamp(16px, 2.5vw, 20px); font-weight: 700; opacity: 0.92; margin-bottom: 4px;
     }
-    .stat-head strong { font-size: 15px; }
-    .stat-head em {
-      font-style: normal; font-size: 10px; font-weight: 700;
-      letter-spacing: 0.14em; opacity: 0.7;
+    .month-disc .m-num {
+      font-size: clamp(64px, 14vw, 108px); font-weight: 800; line-height: 0.95;
+      letter-spacing: -0.03em;
     }
-    .stat-main {
-      font-size: clamp(42px, 8vw, 64px); font-weight: 800; line-height: 1;
-      letter-spacing: -0.02em; margin-bottom: 12px;
+    .month-disc .m-unit {
+      font-size: clamp(22px, 4vw, 32px); font-weight: 700; margin-top: 6px; align-self: flex-end;
+      margin-right: 12%;
     }
-    .stat-sub {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    .cum-panel {
+      background: var(--iv-panel); border-radius: 18px; padding: 22px 22px 26px;
+      position: relative; overflow: hidden; min-height: 220px;
+      display: flex; flex-direction: column; justify-content: center;
     }
-    .stat-sub div {
-      background: color-mix(in srgb, var(--dark) 6%, var(--white));
-      border-radius: 8px; padding: 10px;
+    .cum-panel::before {
+      content: ""; position: absolute; width: 140px; height: 140px; border-radius: 50%;
+      background: var(--iv-mist); top: -30px; right: -20px;
     }
-    .band--dark .stat-sub div { background: color-mix(in srgb, var(--white) 10%, transparent); }
-    .stat-sub .n { font-size: 22px; font-weight: 800; }
-    .stat-sub .l { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+    .cum-panel::after {
+      content: ""; position: absolute; width: 90px; height: 90px; border-radius: 50%;
+      background: var(--iv-mist); bottom: -20px; left: 18px;
+    }
+    .cum-badge {
+      position: relative; z-index: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 58px; height: 58px; border-radius: 50%;
+      background: var(--iv-teal); color: #fff;
+      font-size: 14px; font-weight: 800; margin-bottom: 10px;
+      box-shadow: 0 0 0 10px #fff;
+    }
+    .cum-num {
+      position: relative; z-index: 1;
+      font-size: clamp(56px, 12vw, 96px); font-weight: 800; line-height: 1;
+      color: var(--iv-teal); letter-spacing: -0.03em;
+    }
+    .cum-tail {
+      position: relative; z-index: 1;
+      font-size: clamp(18px, 3vw, 24px); font-weight: 700;
+      color: var(--iv-teal); margin-top: 8px; text-align: right;
+    }
+    .intervene-sub {
+      margin-top: 16px; font-size: 12px; font-weight: 600;
+      color: color-mix(in srgb, var(--iv-teal) 70%, #888);
+      display: flex; flex-wrap: wrap; gap: 10px 18px;
+    }
+    .intervene-sub span { font-variant-numeric: tabular-nums; }
     .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
@@ -268,31 +344,36 @@
     <a href="registry.html">台帳入力</a>
   </nav>
 
-  <section class="band band--dark" id="stats">
-    <div class="eyebrow">STATS</div>
-    <div class="h2">集計</div>
-    <div class="btn-row" style="margin:0 0 14px">
+  <section class="band band--intervene" id="stats">
+    <div class="intervene-head">
+      <span class="afhs-badge">AFHS</span>
+      <span class="intervene-title">介入実績</span>
       <button class="btn btn-outline" type="button" onclick="refreshStats()">↻ 再読込</button>
     </div>
-    <div class="stats-wrap">
-      <div class="stat-block">
-        <div class="stat-head"><strong>今月</strong><em>MONTH</em></div>
-        <div class="stat-main" id="month-total">—</div>
-        <div class="stat-sub">
-          <div><div class="n" id="month-initial">—</div><div class="l">初回</div></div>
-          <div><div class="n" id="month-repeat">—</div><div class="l">再カンファ</div></div>
+    <p class="intervene-story" id="stats-story">
+      <span class="hl" id="story-month">—月</span>は
+      <span class="hl" id="story-count">—</span>人 にケアを届けることができました
+    </p>
+    <div class="intervene-rule" aria-hidden="true"></div>
+    <div class="intervene-grid">
+      <div class="month-ring" aria-label="今月の介入人数">
+        <div class="month-disc">
+          <div class="m-label" id="month-label">—月</div>
+          <div class="m-num" id="month-total">—</div>
+          <div class="m-unit">人</div>
         </div>
       </div>
-      <div class="stat-block">
-        <div class="stat-head"><strong>累計</strong><em>TOTAL</em></div>
-        <div class="stat-main" id="all-total">—</div>
-        <div class="stat-sub">
-          <div><div class="n" id="all-initial">—</div><div class="l">初回</div></div>
-          <div><div class="n" id="all-repeat">—</div><div class="l">再カンファ</div></div>
-        </div>
+      <div class="cum-panel" aria-label="累計の介入人数">
+        <div class="cum-badge">累計</div>
+        <div class="cum-num" id="all-total">—</div>
+        <div class="cum-tail">人になりました</div>
       </div>
     </div>
-    <p class="lead" id="stats-msg" style="margin-top:14px;font-size:13px"></p>
+    <div class="intervene-sub" id="stats-breakdown" hidden>
+      <div>今月　初回 <span id="month-initial">—</span>　再カンファ <span id="month-repeat">—</span></div>
+      <div>累計　初回 <span id="all-initial">—</span>　再カンファ <span id="all-repeat">—</span></div>
+    </div>
+    <p class="lead" id="stats-msg" style="margin-top:14px;font-size:13px;color:#5a7076"></p>
   </section>
 
   <section class="band band--soft" id="why">
@@ -506,11 +587,32 @@
   }
 
   function setStat(id, val) {
-    document.getElementById(id).textContent = (val === undefined || val === null) ? '—' : val;
+    const el = document.getElementById(id);
+    if (el) el.textContent = (val === undefined || val === null || val === '') ? '—' : val;
+  }
+
+  function formatMonthJa(label) {
+    // GAS: yyyy-MM → N月
+    if (!label) {
+      const n = new Date();
+      return (n.getMonth() + 1) + '月';
+    }
+    const m = String(label).match(/(?:^|\D)(\d{1,2})$/);
+    if (m) return Number(m[1]) + '月';
+    const d = new Date(String(label) + '-01T00:00:00');
+    if (!isNaN(d)) return (d.getMonth() + 1) + '月';
+    return String(label);
+  }
+
+  function renderInterveneStory(monthJa, total) {
+    setStat('story-month', monthJa);
+    setStat('story-count', total);
+    setStat('month-label', monthJa);
   }
 
   async function refreshStats() {
     const msg = document.getElementById('stats-msg');
+    const breakdown = document.getElementById('stats-breakdown');
     try {
       const res = await AFHS.loadStats();
       if (!res.ok) {
@@ -519,19 +621,25 @@
           : AFHS.friendlyErrorMessage(res.reason);
         msg.textContent = text;
         ['month-total','month-initial','month-repeat','all-total','all-initial','all-repeat'].forEach(id => setStat(id, '—'));
+        renderInterveneStory('—月', '—');
+        if (breakdown) breakdown.hidden = true;
         return;
       }
       msg.textContent = '';
       const m = res.stats.month;
       const a = res.stats.allTime;
+      const monthJa = formatMonthJa(m.label);
       setStat('month-total', m.total);
       setStat('month-initial', m.initial);
       setStat('month-repeat', m.repeat);
       setStat('all-total', a.total);
       setStat('all-initial', a.initial);
       setStat('all-repeat', a.repeat);
+      renderInterveneStory(monthJa, m.total);
+      if (breakdown) breakdown.hidden = false;
     } catch (_) {
       msg.textContent = '集計を読み込めません';
+      if (breakdown) breakdown.hidden = true;
     }
   }
 
