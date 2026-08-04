@@ -2,8 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AFHS 患者集計</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AFHS — 板橋中央 HCU</title>
+  <script src="afhs-common.js"></script>
   <style>
     :root {
       --bg:    #D6D1C2;
@@ -22,6 +23,7 @@
       --shadow-s: 0 2px 8px color-mix(in srgb, var(--dark) 12%, transparent);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
       background: var(--bg); color: var(--dark);
@@ -29,14 +31,14 @@
       -webkit-font-smoothing: antialiased;
     }
     .scene { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
-    .scene__plane--lime {
+    .scene__plane {
       position: absolute; width: min(125vw, 52rem); height: 40vh;
       top: -8%; left: -22%;
       background: color-mix(in srgb, var(--a1) 20%, var(--bg));
       transform: rotate(-4deg);
     }
     .scene__band { position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--a6); }
-    .app { position: relative; z-index: 0; max-width: 480px; margin: 0 auto; }
+    .shell { max-width: 880px; margin: 0 auto; position: relative; }
     .header {
       position: sticky; top: 0; z-index: 100;
       background: linear-gradient(118deg,
@@ -47,26 +49,53 @@
       box-shadow: 0 2px 10px color-mix(in srgb, var(--dark) 20%, transparent);
       padding: 13px 16px; display: flex; align-items: center; gap: 8px;
     }
-    .header h1 { font-size: 16px; font-weight: 800; color: var(--white); letter-spacing: 0.04em; }
-    .header h1 em {
-      font-style: normal; font-size: 0.65em; font-weight: 600;
-      letter-spacing: 0.14em; text-transform: uppercase;
-      color: color-mix(in srgb, var(--white) 78%, var(--a6));
-      margin-right: 0.5em;
+    .header h1 { font-size: 18px; font-weight: 800; color: var(--white); letter-spacing: 0.06em; }
+    .header .sub {
+      font-size: 11px; font-weight: 600; color: color-mix(in srgb, var(--white) 78%, var(--a6));
+      margin-left: 8px; letter-spacing: 0.04em;
     }
-    .header-right { margin-left: auto; }
-    .settings-btn, .back-btn {
-      background: none; border: none; cursor: pointer; font-family: inherit;
+    .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .settings-btn, .link-btn {
+      background: none; border: 1px solid color-mix(in srgb, var(--white) 30%, var(--a5));
       color: color-mix(in srgb, var(--white) 88%, var(--a6));
+      font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+      cursor: pointer; font-family: inherit; text-decoration: none;
     }
-    .settings-btn {
-      font-size: 13px; font-weight: 600; padding: 4px 8px;
-      border: 1px solid color-mix(in srgb, var(--white) 30%, var(--a5));
-      border-radius: 6px;
+    .nav-chips {
+      position: sticky; top: 52px; z-index: 90;
+      background: color-mix(in srgb, var(--bg) 92%, var(--white));
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px; display: flex; gap: 8px; overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    .back-btn { font-size: 16px; font-weight: 600; padding: 3px 8px 3px 0; }
-    .screen { display: none; padding: 16px 14px 32px; }
-    .screen.active { display: block; }
+    .nav-chips a {
+      flex: 0 0 auto; text-decoration: none; font-size: 13px; font-weight: 700;
+      padding: 7px 12px; border-radius: 999px;
+      background: var(--white); color: var(--a3);
+      border: 1px solid color-mix(in srgb, var(--a3) 28%, var(--white));
+    }
+    .nav-chips a:hover { background: color-mix(in srgb, var(--a1) 12%, var(--white)); }
+    .band {
+      padding: 28px 18px 32px;
+      background: color-mix(in srgb, var(--a1) 14%, var(--bg));
+      border-bottom: 1px solid color-mix(in srgb, var(--a1) 22%, var(--bg));
+    }
+    .band--dark {
+      background: linear-gradient(135deg,
+        color-mix(in srgb, var(--dark) 88%, var(--a3)),
+        color-mix(in srgb, var(--a4) 70%, var(--a5)));
+      color: var(--white);
+    }
+    .band--soft { background: color-mix(in srgb, var(--a4) 10%, var(--bg)); }
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--a2); margin-bottom: 8px;
+    }
+    .band--dark .eyebrow { color: color-mix(in srgb, var(--white) 70%, var(--a6)); }
+    .h2 { font-size: 22px; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 10px; }
+    .lead { font-size: 15px; line-height: 1.7; color: var(--muted); max-width: 40em; }
+    .band--dark .lead { color: color-mix(in srgb, var(--white) 86%, var(--a6)); }
+    .section { padding: 24px 18px 28px; }
     .card {
       background: var(--white); border: 1px solid var(--border);
       border-radius: 10px; padding: 14px 16px; margin-bottom: 14px;
@@ -78,59 +107,46 @@
       margin-bottom: 10px; padding-bottom: 8px;
       border-bottom: 1px solid color-mix(in srgb, var(--a1) 18%, var(--white));
     }
-    label.field-label {
-      display: block; font-size: 12px; font-weight: 600;
-      color: var(--subtle); margin-bottom: 6px;
+    .stats-wrap { display: grid; gap: 16px; }
+    @media (min-width: 720px) {
+      .stats-wrap { grid-template-columns: 1fr 1fr; }
     }
-    input[type="text"], input[type="date"], input[type="number"], select, textarea {
-      width: 100%; padding: 11px 12px; border: 1.5px solid var(--border);
-      border-radius: 8px; font-size: 16px; font-family: inherit;
-      background: var(--white); color: var(--dark);
+    .stat-block {
+      background: color-mix(in srgb, var(--white) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--white) 18%, transparent);
+      border-radius: 12px; padding: 16px;
     }
-    textarea { min-height: 72px; resize: vertical; }
-    input:focus, select:focus, textarea:focus {
-      outline: none; border-color: var(--a3);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--a3) 18%, transparent);
+    .band:not(.band--dark) .stat-block {
+      background: var(--white); border-color: var(--border);
     }
-    .field { margin-bottom: 12px; }
-    .field:last-child { margin-bottom: 0; }
-    .radio-group { display: flex; flex-direction: column; gap: 8px; }
-    .radio-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border: 1.5px solid var(--border);
-      border-radius: 8px; cursor: pointer; font-size: 15px;
+    .stat-head {
+      display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;
     }
-    .radio-item:has(input:checked) {
-      border-color: var(--a3);
-      background: color-mix(in srgb, var(--a1) 8%, var(--white));
+    .stat-head strong { font-size: 15px; }
+    .stat-head em {
+      font-style: normal; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.14em; opacity: 0.7;
     }
-    .radio-item input { width: 18px; height: 18px; accent-color: var(--a3); }
-    .warn-box {
-      background: color-mix(in srgb, var(--warn) 10%, var(--white));
-      border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--white));
-      border-left: 3px solid var(--warn);
-      border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
-      font-size: 13px; color: var(--muted); line-height: 1.55;
+    .stat-main {
+      font-size: clamp(42px, 8vw, 64px); font-weight: 800; line-height: 1;
+      letter-spacing: -0.02em; margin-bottom: 12px;
     }
-    .warn-box strong { color: var(--warn); }
-    .info-box {
-      background: color-mix(in srgb, var(--a4) 8%, var(--white));
-      border: 1px solid color-mix(in srgb, var(--a4) 28%, var(--white));
-      border-left: 3px solid var(--a5);
-      border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
-      font-size: 12px; color: var(--muted); line-height: 1.6;
+    .stat-sub {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
     }
-    .prefill-banner {
-      background: color-mix(in srgb, var(--a1) 12%, var(--white));
-      border: 1px solid color-mix(in srgb, var(--a1) 35%, var(--white));
-      border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
-      font-size: 12px; color: var(--muted);
+    .stat-sub div {
+      background: color-mix(in srgb, var(--dark) 6%, var(--white));
+      border-radius: 8px; padding: 10px;
     }
-    .prefill-banner strong { color: var(--a2); }
+    .band--dark .stat-sub div { background: color-mix(in srgb, var(--white) 10%, transparent); }
+    .stat-sub .n { font-size: 22px; font-weight: 800; }
+    .stat-sub .l { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
     .btn {
-      width: 100%; padding: 14px; border-radius: 9px; border: none;
-      font-size: 15px; font-weight: 700; cursor: pointer;
-      font-family: inherit; margin-bottom: 10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 11px 14px; border-radius: 9px; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+      text-decoration: none;
     }
     .btn-primary {
       background: linear-gradient(118deg, var(--a3), var(--a5));
@@ -141,41 +157,86 @@
       background: var(--white); color: var(--a3);
       border: 1.5px solid color-mix(in srgb, var(--a3) 40%, var(--white));
     }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    .band--dark .btn-outline {
+      background: transparent; color: var(--white);
+      border-color: color-mix(in srgb, var(--white) 40%, transparent);
     }
-    .stat-cell {
-      background: color-mix(in srgb, var(--dark) 4%, var(--white));
-      border-radius: 8px; padding: 10px 12px; text-align: center;
+    .role-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;
+      margin-top: 14px;
     }
-    .stat-num { font-size: 22px; font-weight: 800; color: var(--a3); }
-    .stat-lbl { font-size: 11px; color: var(--subtle); margin-top: 2px; }
-    .success-icon {
-      width: 64px; height: 64px; margin: 24px auto 16px;
-      border-radius: 50%; background: color-mix(in srgb, var(--a1) 20%, var(--white));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px; color: var(--a3);
+    .role-grid a {
+      display: block; text-decoration: none; color: var(--dark);
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 12px; font-weight: 700; font-size: 14px;
+      box-shadow: var(--shadow-s);
     }
-    .success-title { text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-    .success-sub { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+    .role-grid a span {
+      display: block; font-size: 11px; font-weight: 600; color: var(--subtle); margin-top: 4px;
+    }
+    .score-card h3 { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+    .score-card .purpose { font-size: 14px; color: var(--muted); margin-bottom: 10px; }
+    .score-card .example {
+      font-size: 13px; background: color-mix(in srgb, var(--a1) 8%, var(--white));
+      border-left: 3px solid var(--a3); padding: 10px 12px; border-radius: 0 8px 8px 0;
+      margin-bottom: 10px; color: var(--muted);
+    }
+    details.fold {
+      border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;
+    }
+    details.fold summary {
+      cursor: pointer; font-size: 13px; font-weight: 700; color: var(--a2);
+      list-style: none;
+    }
+    details.fold summary::-webkit-details-marker { display: none; }
+    details.fold[open] summary { margin-bottom: 10px; }
+    .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .mini-table th, .mini-table td {
+      border-bottom: 1px solid var(--border); padding: 7px 6px; text-align: left; vertical-align: top;
+    }
+    .mini-table th { width: 4.5em; color: var(--a2); }
+    .fold-note { font-size: 12px; color: var(--subtle); margin: 8px 0; }
+    .fold-img { width: 100%; height: auto; border-radius: 8px; margin-top: 10px; border: 1px solid var(--border); }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .chips button {
+      border: 1px solid var(--border); background: var(--white); border-radius: 999px;
+      padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+      color: var(--muted);
+    }
+    .chips button.active { background: var(--a3); color: var(--white); border-color: var(--a3); }
+    .note-item {
+      border-bottom: 1px solid var(--border); padding: 10px 0;
+    }
+    .note-item:last-child { border-bottom: none; }
+    .note-meta { font-size: 11px; color: var(--subtle); margin-bottom: 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .note-meta .pin {
+      color: var(--warn); font-weight: 800;
+    }
+    .note-body { font-size: 14px; white-space: pre-wrap; }
+    label.field-label {
+      display: block; font-size: 12px; font-weight: 600; color: var(--subtle); margin-bottom: 6px;
+    }
+    input, select, textarea {
+      width: 100%; padding: 11px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 16px; font-family: inherit;
+      background: var(--white); color: var(--dark); margin-bottom: 10px;
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    .check {
+      display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted);
+      margin: 8px 0 12px;
+    }
+    .check input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--a3); }
+    .warn { font-size: 12px; color: var(--warn); margin-bottom: 10px; }
     .hidden { display: none !important; }
-    .toggle-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 0; border-bottom: 1px solid var(--border);
+    .modal {
+      position: fixed; inset: 0; background: color-mix(in srgb, var(--dark) 45%, transparent);
+      z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+      padding: 16px;
     }
-    .toggle-row:last-child { border-bottom: none; }
-    .toggle-pair { display: flex; gap: 6px; }
-    .toggle-pair button {
-      padding: 6px 14px; border-radius: 6px; border: 1.5px solid var(--border);
-      background: var(--white); font-size: 13px; font-weight: 600;
-      cursor: pointer; font-family: inherit; color: var(--muted);
-    }
-    .toggle-pair button.active {
-      background: var(--a3); color: var(--white); border-color: var(--a3);
-    }
-    .toggle-pair button.active.no {
-      background: var(--subtle); border-color: var(--subtle);
+    .modal-card {
+      background: var(--white); border-radius: 12px; padding: 18px; width: min(480px, 100%);
+      max-height: 85vh; overflow: auto;
     }
     #toast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
@@ -184,172 +245,230 @@
       transition: transform 0.25s ease; pointer-events: none; max-width: 90vw;
     }
     #toast.show { transform: translateX(-50%) translateY(0); }
-    .test-banner {
-      background: var(--warn); color: var(--white);
-      text-align: center; padding: 8px 12px;
-      font-size: 13px; font-weight: 700;
-    }
   </style>
 </head>
 <body>
-<div class="scene">
-  <div class="scene__plane--lime"></div>
-  <div class="scene__band"></div>
+<div class="scene"><div class="scene__plane"></div><div class="scene__band"></div></div>
+
+<div class="shell">
+  <header class="header">
+    <h1>AFHS<span class="sub">板橋中央 HCU</span></h1>
+    <div class="header-right">
+      <a class="link-btn" href="registry.html">台帳入力</a>
+      <button class="settings-btn" type="button" onclick="openSettings()">⚙ 設定</button>
+    </div>
+  </header>
+
+  <nav class="nav-chips" aria-label="セクション">
+    <a href="#stats">集計</a>
+    <a href="#why">意義</a>
+    <a href="#how">運用</a>
+    <a href="#scores">スコア</a>
+    <a href="#notes">メモ</a>
+    <a href="registry.html">台帳入力</a>
+  </nav>
+
+  <section class="band band--dark" id="stats">
+    <div class="eyebrow">STATS</div>
+    <div class="h2">集計</div>
+    <div class="btn-row" style="margin:0 0 14px">
+      <button class="btn btn-outline" type="button" onclick="refreshStats()">↻ 再読込</button>
+    </div>
+    <div class="stats-wrap">
+      <div class="stat-block">
+        <div class="stat-head"><strong>今月</strong><em>MONTH</em></div>
+        <div class="stat-main" id="month-total">—</div>
+        <div class="stat-sub">
+          <div><div class="n" id="month-initial">—</div><div class="l">初回</div></div>
+          <div><div class="n" id="month-repeat">—</div><div class="l">再カンファ</div></div>
+        </div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-head"><strong>累計</strong><em>TOTAL</em></div>
+        <div class="stat-main" id="all-total">—</div>
+        <div class="stat-sub">
+          <div><div class="n" id="all-initial">—</div><div class="l">初回</div></div>
+          <div><div class="n" id="all-repeat">—</div><div class="l">再カンファ</div></div>
+        </div>
+      </div>
+    </div>
+    <p class="lead" id="stats-msg" style="margin-top:14px;font-size:13px"></p>
+  </section>
+
+  <section class="band band--soft" id="why">
+    <div class="eyebrow">WHY</div>
+    <div class="h2">板中HCUだからできること</div>
+    <p class="lead">毎日多職種で板中版4Mをセットで回す。スコアで終わらせず、今日やる一手までみんなで決める。</p>
+  </section>
+
+  <section class="band" id="how">
+    <div class="eyebrow">HOW</div>
+    <div class="h2">まわり方</div>
+    <p class="lead">目安 10:30／約30分。中央テーブルでまとめてカンファ → ベッドサイド。司会は専従医。<br>医師の運用手順は Notion。</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="registry.html">台帳入力</a>
+      <a class="btn btn-outline" id="btn-notion" target="_blank" rel="noopener">医師の運用手順（Notion）</a>
+      <button class="btn btn-outline" type="button" onclick="AFHS.openSheetWithTokenGate()">実施台帳（Googleスプレッドシート）</button>
+    </div>
+    <div class="role-grid" aria-label="職種ページ">
+      <a href="role-doctor.html">医師<span>準備中 · メモ可</span></a>
+      <a href="role-ns.html">Ns<span>準備中 · メモ可</span></a>
+      <a href="role-pharm.html">薬剤<span>準備中 · メモ可</span></a>
+      <a href="role-nutrition.html">栄養<span>準備中 · メモ可</span></a>
+      <a href="role-rehab.html">リハ<span>準備中 · メモ可</span></a>
+    </div>
+  </section>
+
+  <section class="section" id="scores">
+    <div class="eyebrow">SCORES</div>
+    <div class="h2" style="margin-bottom:16px">スコア</div>
+
+    <article class="card score-card">
+      <h3>What Matters</h3>
+      <p class="purpose">今のケアで辛いこと・してほしくないことを、本人の言葉で拾う</p>
+      <div class="example">「管が当たって眠れない、抜いてほしい、とのこと。今日は不要ラインを整理する」</div>
+      <details class="fold">
+        <summary>▼ 質問・記録の要点</summary>
+        <p class="fold-note">質問: 「今のケアの中で辛いこと、してほしくないことは何ですか？」</p>
+        <p class="fold-note">記録: 本人の言葉をそのまま残す（要約しすぎない）。</p>
+      </details>
+    </article>
+
+    <article class="card score-card">
+      <h3>Medication</h3>
+      <p class="purpose">高齢者に不要・有害になりやすい薬を見つけ、減薬／中止／維持を決める</p>
+      <div class="example">「持参薬にトリアゾラム。せん妄リスクあり。減量または中止を提案」</div>
+      <details class="fold">
+        <summary>▼ 毎回チェック</summary>
+        <p class="fold-note">根拠: 日本老年医学会「高齢者の安全な薬物療法ガイドライン2025」</p>
+        <p class="fold-note">BZD／オピオイド／抗コリン／睡眠・鎮静（市販含む）／筋弛緩／三環系／抗精神病薬／気分安定薬／その他</p>
+      </details>
+    </article>
+
+    <article class="card score-card">
+      <h3>Mentation</h3>
+      <p class="purpose">せん妄・意識・疼痛・睡眠を見逃さず、今日の対応まで落とす</p>
+      <div class="example">「CAM-ICU 陽性。離床と病状説明・デバイス整理の必要性あり。」</div>
+      <div class="example">「適切な鎮痛薬の使用で快適が得られそう」</div>
+      <details class="fold">
+        <summary>▼ ツール早見</summary>
+        <table class="mini-table">
+          <tr><th>JCS / GCS</th><td>意識レベル</td></tr>
+          <tr><th>CAM-ICU</th><td>ICU/HCU向けせん妄スクリーニング</td></tr>
+          <tr><th>ICDSC</th><td>せん妄チェックリスト</td></tr>
+          <tr><th>NRS / CPOT / BPS</th><td>疼痛</td></tr>
+          <tr><th>睡眠状況</th><td>夜間の経過</td></tr>
+        </table>
+        <p class="fold-note">陽性・悪化時は、水分・オリエンテーション・感覚補助（眼鏡・補聴器・義歯）・非薬物的睡眠・ハイリスク薬見直しをセットで検討。</p>
+      </details>
+    </article>
+
+    <article class="card score-card">
+      <h3>Mobility</h3>
+      <p class="purpose">今日どこまで動けたか（JH-HLM）を共有し、離床の一手を決める</p>
+      <div class="example">「JH-HLM 3点、端座位まで。今日の目標は椅子移乗（4点）」</div>
+      <details class="fold">
+        <summary>▼ JH-HLM</summary>
+        <table class="mini-table">
+          <tr><th>1</th><td>臥床のみ</td></tr>
+          <tr><th>2</th><td>ベッド上で体動</td></tr>
+          <tr><th>3</th><td>端座位</td></tr>
+          <tr><th>4</th><td>椅子への移乗</td></tr>
+          <tr><th>5</th><td>1分以上の立位</td></tr>
+          <tr><th>6</th><td>10歩以上歩行</td></tr>
+          <tr><th>7</th><td>約7.6m以上歩行</td></tr>
+          <tr><th>8</th><td>約76m以上歩行</td></tr>
+        </table>
+        <p class="fold-note">できる最大ではなく、<strong>実際にやった最高</strong>を記録する。</p>
+        <img class="fold-img" src="jh-hlm-scale.png" alt="JH-HLM 1〜8">
+      </details>
+      <details class="fold">
+        <summary>▼ CFS（入院前）</summary>
+        <table class="mini-table">
+          <tr><th>1</th><td>非常に健常</td></tr>
+          <tr><th>2</th><td>健常</td></tr>
+          <tr><th>3</th><td>健康管理されている</td></tr>
+          <tr><th>4</th><td>ごく軽度の虚弱</td></tr>
+          <tr><th>5</th><td>軽度の虚弱</td></tr>
+          <tr><th>6</th><td>中等度の虚弱</td></tr>
+          <tr><th>7</th><td>重度の虚弱</td></tr>
+          <tr><th>8</th><td>非常に重度の虚弱</td></tr>
+          <tr><th>9</th><td>人生の最終段階</td></tr>
+        </table>
+        <p class="fold-note"><strong>入院前</strong>のベースライン。日々の離床（JH-HLM）と混同しない。</p>
+        <img class="fold-img" src="cfs-japanese.png" alt="臨床虚弱尺度 CFS 1〜9">
+      </details>
+    </article>
+
+    <article class="card score-card">
+      <h3>Meal</h3>
+      <p class="purpose">目標kcal・達成率・食形態を見て、栄養の一手を決める</p>
+      <div class="example">「目標1800kcal、達成75%、嚥下調整食3級。補食追加を検討」</div>
+      <details class="fold">
+        <summary>▼ ツール早見</summary>
+        <table class="mini-table">
+          <tr><th>目標kcal・達成率・食形態</th><td>毎回の必須可視化（補食・静脈栄養などのアクションにつなげる）</td></tr>
+          <tr><th>MNA-SF / GLIM</th><td>低栄養の評価</td></tr>
+          <tr><th>RFS</th><td>再栄養症候群リスク（高リスク時は P / Mg / K を監視）</td></tr>
+          <tr><th>OHAT</th><td>口腔</td></tr>
+          <tr><th>排泄状況</th><td>便秘・下痢など食事と連動する問題</td></tr>
+        </table>
+        <img class="fold-img" src="ohat-j.png" alt="OHAT-J 口腔アセスメント">
+      </details>
+    </article>
+  </section>
+
+  <section class="section" id="notes">
+    <div class="eyebrow">NOTES</div>
+    <div class="h2" style="margin-bottom:8px">メモ</div>
+    <p class="warn">氏名・患者ID・ベッド番号は書かない</p>
+
+    <div class="card">
+      <div class="card-title">一覧</div>
+      <div class="chips" id="role-filters"></div>
+      <div class="chips" id="type-filters"></div>
+      <div id="notes-list"><p style="font-size:13px;color:var(--subtle)">読み込み中…</p></div>
+      <div class="btn-row"><button class="btn btn-outline" type="button" onclick="refreshNotes()">↻ 再読込</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">投稿</div>
+      <label class="field-label" for="note-role">職種</label>
+      <select id="note-role"></select>
+      <label class="field-label" for="note-type">種別</label>
+      <select id="note-type"></select>
+      <label class="field-label" for="note-body">本文</label>
+      <textarea id="note-body" maxlength="500" placeholder="短く。患者を特定できる情報は書かない"></textarea>
+      <label class="check">
+        <input type="checkbox" id="note-privacy">
+        <span>患者を特定できる情報を含めていない</span>
+      </label>
+      <button class="btn btn-primary" type="button" onclick="submitNote()">投稿する</button>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="btn-row">
+      <a class="btn btn-primary" href="registry.html">台帳入力</a>
+      <a class="btn btn-outline" href="#" id="btn-notion-2" target="_blank" rel="noopener">医師の運用手順（Notion）</a>
+      <button class="btn btn-outline" type="button" onclick="AFHS.openSheetWithTokenGate()">実施台帳（Googleスプレッドシート）</button>
+    </div>
+  </section>
 </div>
 
-<div class="app">
-  <div id="test-banner" class="test-banner hidden">🧪 テストモード — データは送信されません</div>
-
-  <!-- HOME / FORM -->
-  <div class="screen active" id="screen-form">
-    <div class="header">
-      <h1><em>AFHS</em> 患者集計</h1>
-      <div class="header-right">
-        <button class="settings-btn" onclick="goSettings()">⚙ 設定</button>
-      </div>
-    </div>
-
-    <div style="padding:16px 14px 32px">
-      <div id="pending-banner" class="warn-box hidden">
-        <strong>⚠️ 未送信のデータが <span id="pending-count">0</span> 件あります</strong><br>
-        <span style="font-size:12px">前回までの送信が完了していません。</span>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-primary" style="margin:0;padding:9px;font-size:13px" onclick="retryPending()">↻ 再送信</button>
-          <button class="btn btn-outline" style="margin:0;padding:9px;font-size:13px" onclick="clearPending()">破棄</button>
-        </div>
-      </div>
-
-      <div class="info-box">
-        カンファ終了後、<strong>1 件ずつ</strong>記録してください。<br>
-        修正はスプレッドシートから行います。
-      </div>
-
-      <div class="card">
-        <div class="card-title">基本情報</div>
-        <div class="field">
-          <label class="field-label" for="inp-date">実施日</label>
-          <input type="date" id="inp-date">
-        </div>
-        <div class="field">
-          <label class="field-label" for="inp-patient">患者 ID</label>
-          <input type="text" id="inp-patient" inputmode="numeric" placeholder="例：12345" onblur="lookupPatient()">
-        </div>
-        <div class="field">
-          <label class="field-label" for="inp-hcuday">HCU 入室日数</label>
-          <input type="number" id="inp-hcuday" min="1" placeholder="例：3（入室日=1日目）">
-        </div>
-      </div>
-
-      <div id="prefill-banner" class="prefill-banner hidden"></div>
-      <div id="validation-warn" class="warn-box hidden"></div>
-
-      <div class="card">
-        <div class="card-title">診療情報</div>
-        <div class="field">
-          <label class="field-label" for="inp-dept">診療科</label>
-          <select id="inp-dept">
-            <option value="">選択してください</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="field-label" for="inp-dx">疾患（短く）</label>
-          <input type="text" id="inp-dx" placeholder="例：大腸癌術後">
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">実施区分</div>
-        <div class="radio-group" id="session-type-group">
-          <label class="radio-item">
-            <input type="radio" name="sessionType" value="初回カンファ" checked onchange="onSessionTypeChange()">
-            初回カンファ
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="sessionType" value="再カンファ" onchange="onSessionTypeChange()">
-            再カンファ
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="sessionType" value="その他" onchange="onSessionTypeChange()">
-            その他
-          </label>
-        </div>
-        <div class="field" style="margin-top:12px">
-          <label class="field-label" for="inp-session">回数</label>
-          <input type="number" id="inp-session" min="1" value="1">
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">メモ（任意）</div>
-        <textarea id="inp-memo" placeholder="再カンファ理由、診療科「その他」の科名など"></textarea>
-      </div>
-
-      <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">記録を送信 ✓</button>
-
-      <div class="card" style="margin-top:20px">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-          <span>今月の集計</span>
-          <button onclick="loadStats()" style="background:none;border:none;font-size:14px;color:var(--subtle);cursor:pointer">↻</button>
-        </div>
-        <div id="stats-content" class="stats-grid">
-          <div class="stat-cell"><div class="stat-num">—</div><div class="stat-lbl">読込中</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SUCCESS -->
-  <div class="screen" id="screen-success">
-    <div class="header">
-      <h1><em>AFHS</em> 送信完了</h1>
-    </div>
-    <div style="padding:16px 14px 32px">
-      <div class="success-icon">✓</div>
-      <p class="success-title">記録しました</p>
-      <p class="success-sub">スプレッドシートに 1 行追加されました</p>
-      <button class="btn btn-primary" onclick="resetForm()">続けて入力する</button>
-    </div>
-  </div>
-
-  <!-- SETTINGS -->
-  <div class="screen" id="screen-settings">
-    <div class="header">
-      <button class="back-btn" onclick="goScreen('screen-form')">‹ 戻る</button>
-      <h1><em>AFHS</em> 設定</h1>
-    </div>
-    <div style="padding:16px 14px 32px">
-      <div class="card">
-        <div class="card-title">GAS Web App URL</div>
-        <div class="field">
-          <input type="text" id="inp-gasurl" placeholder="https://script.google.com/macros/s/.../exec">
-        </div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6">
-          Google Apps Script をウェブアプリとしてデプロイした URL を入力します。
-        </p>
-      </div>
-      <div class="card">
-        <div class="card-title">アクセストークン</div>
-        <div class="field">
-          <input type="text" id="inp-apitoken" placeholder="GAS のスクリプト プロパティに設定した API_TOKEN">
-        </div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6">
-          GAS 側の「スクリプト プロパティ」に設定した <code>API_TOKEN</code> と同じ値を入力します。管理者から共有された値を入力してください。
-        </p>
-      </div>
-      <div class="card">
-        <div class="card-title">テストモード</div>
-        <div class="toggle-row">
-          <span style="font-size:14px;font-weight:600">テストモード</span>
-          <div class="toggle-pair">
-            <button id="test-y" onclick="setTestMode(true)">ON</button>
-            <button id="test-n" class="active no" onclick="setTestMode(false)">OFF</button>
-          </div>
-        </div>
-        <p style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">
-          ON のとき送信データは GAS に送られません（UI 確認用）。
-        </p>
-      </div>
-      <button class="btn btn-primary" onclick="saveSettings()">設定を保存</button>
+<div id="settings-modal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-card">
+    <div class="card-title">設定</div>
+    <label class="field-label" for="inp-gasurl">GAS Web App URL</label>
+    <input type="text" id="inp-gasurl" placeholder="https://script.google.com/macros/s/.../exec">
+    <label class="field-label" for="inp-apitoken">アクセストークン</label>
+    <input type="text" id="inp-apitoken" placeholder="API_TOKEN">
+    <p style="font-size:12px;color:var(--subtle);margin-bottom:12px;line-height:1.6">
+      実施台帳（Googleスプレッドシート）を開くときも、このトークンが必要です。
+    </p>
+    <div class="btn-row">
+      <button class="btn btn-primary" type="button" onclick="saveSettings()">設定を保存</button>
+      <button class="btn btn-outline" type="button" onclick="closeSettings()">閉じる</button>
     </div>
   </div>
 </div>
@@ -357,484 +476,152 @@
 <div id="toast"></div>
 
 <script>
-const DEPARTMENTS = [
-  '内科', '救急総合診療科', '呼吸器内科', '呼吸器外科',
-  '消化器内科', '消化器外科', '循環器内科', '腎臓内科',
-  '泌尿器科', '腎臓外科', '脳外科', '整形外科',
-  '心臓血管外科', '形成外科', '耳鼻咽喉科', 'その他',
-];
+  let filterRole = 'すべて';
+  let filterType = 'すべて';
+  let _tt;
 
-let _sending = false;
-let _patientHistory = null;
-
-const p2 = n => String(n).padStart(2, '0');
-const ls  = k => localStorage.getItem(k);
-const lss = (k, v) => localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
-
-window.addEventListener('DOMContentLoaded', () => {
-  const t = new Date();
-  document.getElementById('inp-date').value =
-    `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
-
-  const sel = document.getElementById('inp-dept');
-  DEPARTMENTS.forEach(d => {
-    const o = document.createElement('option');
-    o.value = d; o.textContent = d;
-    sel.appendChild(o);
-  });
-
-  const params = new URLSearchParams(location.search);
-  const gasFromUrl = params.get('gas');
-  const tokenFromUrl = params.get('token');
-  if (gasFromUrl) {
-    lss('gasUrl', gasFromUrl);
-    history.replaceState(null, '', location.pathname);
-  }
-  if (tokenFromUrl) {
-    lss('apiToken', tokenFromUrl);
-    history.replaceState(null, '', location.pathname);
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(_tt);
+    _tt = setTimeout(() => el.classList.remove('show'), 2600);
   }
 
-  document.getElementById('inp-gasurl').value = ls('gasUrl') || '';
-  document.getElementById('inp-apitoken').value = ls('apiToken') || '';
-  applyTestMode(ls('testMode') === 'true');
-
-  migrateOldPending();
-  const removedInvalid = sanitizeQueue();
-  if (removedInvalid > 0) {
-    toast(`不完全な未送信データ ${removedInvalid} 件を破棄しました`);
+  function openSettings() {
+    document.getElementById('inp-gasurl').value = AFHS.ls('gasUrl');
+    document.getElementById('inp-apitoken').value = AFHS.ls('apiToken');
+    document.getElementById('settings-modal').classList.remove('hidden');
   }
-  updatePendingBanner();
-
-  ['inp-date', 'inp-hcuday', 'inp-session'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateWarnings);
-  });
-  document.querySelectorAll('input[name="sessionType"]').forEach(el => {
-    el.addEventListener('change', updateWarnings);
-  });
-
-  loadStats();
-});
-
-function goScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0, 0);
-  if (id === 'screen-form') loadStats();
-}
-
-function goSettings() {
-  document.getElementById('inp-gasurl').value = ls('gasUrl') || '';
-  document.getElementById('inp-apitoken').value = ls('apiToken') || '';
-  goScreen('screen-settings');
-}
-
-function saveSettings() {
-  const url = document.getElementById('inp-gasurl').value.trim();
-  const token = document.getElementById('inp-apitoken').value.trim();
-  lss('gasUrl', url);
-  lss('apiToken', token);
-  toast('設定を保存しました');
-  goScreen('screen-form');
-}
-
-function applyTestMode(on) {
-  document.getElementById('test-banner').classList.toggle('hidden', !on);
-  document.getElementById('test-y').classList.toggle('active', on);
-  document.getElementById('test-n').classList.toggle('active', !on);
-  document.getElementById('test-n').classList.toggle('no', !on);
-}
-
-function setTestMode(on) {
-  lss('testMode', on ? 'true' : 'false');
-  applyTestMode(on);
-  toast(on ? 'テストモード ON' : 'テストモード OFF');
-}
-
-function isTestMode() { return ls('testMode') === 'true'; }
-
-function setSubmitDisabled(disabled) {
-  document.getElementById('btn-submit').disabled = disabled;
-}
-
-// GAS Web App は POST 時に 302 リダイレクトする。
-// doPost（シート書き込み）は 1 回目の POST で完了するが、リダイレクト先の
-// 応答が JSON でない場合があり res.json() が失敗する（書き込み済み＋UIエラー）。
-async function parseGasResponse(res, { method = 'GET' } = {}) {
-  const text = await res.text();
-  if (!text) {
-    if (method === 'POST' && res.ok) return { status: 'ok' };
-    throw new Error('empty response');
+  function closeSettings() {
+    document.getElementById('settings-modal').classList.add('hidden');
   }
-  try {
-    return JSON.parse(text);
-  } catch (_) {
-    const embedded = text.match(/\{[\s\S]*?"status"\s*:\s*"(?:ok|error)"[\s\S]*?\}/);
-    if (embedded) {
-      try { return JSON.parse(embedded[0]); } catch (_) {}
-    }
-    if (method === 'POST' && res.ok && !/"status"\s*:\s*"error"/.test(text)) {
-      console.warn('[GAS] POST redirect returned non-JSON; data likely saved.', text.slice(0, 200));
-      return { status: 'ok' };
-    }
-    throw new Error(text.slice(0, 100) || 'invalid response');
-  }
-}
-
-async function gasFetch(url, options = {}) {
-  const method = (options.method || 'GET').toUpperCase();
-  const headers = { ...(options.headers || {}) };
-  if (method === 'POST' && !headers['Content-Type']) {
-    headers['Content-Type'] = 'text/plain;charset=utf-8';
-  }
-  const res = await fetch(url, { redirect: 'follow', ...options, headers });
-  return parseGasResponse(res, { method });
-}
-
-// POST 送信後に getPatient でシート反映を確認（Failed to fetch 対策）
-async function verifyPostSaved(url, payload) {
-  const token = ls('apiToken') || '';
-  try {
-    const json = await gasFetch(
-      `${url}?action=getPatient&patientId=${encodeURIComponent(payload.patientId)}&token=${encodeURIComponent(token)}`
-    );
-    if (json.status !== 'ok' || !json.patient?.records) return false;
-    const session = Number(payload.sessionNumber);
-    return json.patient.records.some(r =>
-      r.date === payload.date && Number(r.sessionNumber) === session
-    );
-  } catch (_) {
-    return false;
-  }
-}
-
-async function gasPost(url, payload) {
-  const token = ls('apiToken') || '';
-  const body = JSON.stringify({ ...payload, token });
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body,
-    });
-    return await parseGasResponse(res, { method: 'POST' });
-  } catch (err) {
-    if (await verifyPostSaved(url, payload)) {
-      console.warn('[GAS] POST failed to read response but record verified on server', err);
-      return { status: 'ok', verified: true };
-    }
-    throw err;
-  }
-}
-
-function getSessionType() {
-  return document.querySelector('input[name="sessionType"]:checked')?.value || '';
-}
-
-function onSessionTypeChange() {
-  const type = getSessionType();
-  const sessionEl = document.getElementById('inp-session');
-  if (type === '初回カンファ') {
-    sessionEl.value = 1;
-  } else if (type === '再カンファ' && _patientHistory?.found) {
-    sessionEl.value = _patientHistory.suggestedSession || 2;
-  }
-  updateWarnings();
-}
-
-async function lookupPatient() {
-  const id = document.getElementById('inp-patient').value.trim();
-  const banner = document.getElementById('prefill-banner');
-  _patientHistory = null;
-  banner.classList.add('hidden');
-
-  if (!id) return;
-  const url = ls('gasUrl');
-  if (!url || isTestMode()) return;
-
-  try {
-    const token = ls('apiToken') || '';
-    const json = await gasFetch(
-      `${url}?action=getPatient&patientId=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`
-    );
-    if (json.status !== 'ok' || !json.patient?.found) return;
-
-    _patientHistory = json.patient;
-    if (_patientHistory.department) {
-      document.getElementById('inp-dept').value = _patientHistory.department;
-    }
-    if (_patientHistory.diagnosis) {
-      document.getElementById('inp-dx').value = _patientHistory.diagnosis;
-    }
-    if (getSessionType() === '再カンファ') {
-      document.getElementById('inp-session').value = _patientHistory.suggestedSession || 2;
-    }
-
-    const last = _patientHistory.records[_patientHistory.records.length - 1];
-    banner.innerHTML = `<strong>過去の記録あり</strong> — 前回：${last?.date || '—'}（${last?.sessionNumber || '?'}回目）` +
-      `<br>診療科・疾患を前回値で入力しました`;
-    banner.classList.remove('hidden');
-    updateWarnings();
-  } catch (_) { /* silent */ }
-}
-
-function updateWarnings() {
-  const warnEl = document.getElementById('validation-warn');
-  const warnings = [];
-  const type = getSessionType();
-  const date = document.getElementById('inp-date').value;
-  const session = Number(document.getElementById('inp-session').value);
-  const dept = document.getElementById('inp-dept').value;
-  const memo = document.getElementById('inp-memo').value.trim();
-
-  if (type === '初回カンファ' && session !== 1) {
-    warnings.push(`初回カンファなのに回数が <strong>${session}</strong> です（通常は 1）`);
-  }
-  if (type === '再カンファ' && session < 2) {
-    warnings.push(`再カンファなのに回数が <strong>${session}</strong> です（通常は 2 以上）`);
-  }
-  if (dept === 'その他' && !memo) {
-    warnings.push('診療科「その他」の場合、メモに科名を書くことを推奨します');
-  }
-  if (date && session && _patientHistory?.records?.some(r => r.date === date && r.sessionNumber === session)) {
-    warnings.push('同じ実施日・回数の記録が既にあります（重複送信の可能性）');
+  function saveSettings() {
+    AFHS.ls('gasUrl', document.getElementById('inp-gasurl').value.trim());
+    AFHS.ls('apiToken', document.getElementById('inp-apitoken').value.trim());
+    toast('設定を保存しました');
+    closeSettings();
+    refreshStats();
+    refreshNotes();
   }
 
-  if (warnings.length) {
-    warnEl.innerHTML = warnings.map(w => `⚠ ${w}`).join('<br>');
-    warnEl.classList.remove('hidden');
-  } else {
-    warnEl.classList.add('hidden');
-  }
-}
-
-function buildPayload() {
-  return {
-    date: document.getElementById('inp-date').value,
-    patientId: document.getElementById('inp-patient').value.trim(),
-    hcuDay: document.getElementById('inp-hcuday').value,
-    department: document.getElementById('inp-dept').value,
-    diagnosis: document.getElementById('inp-dx').value.trim(),
-    sessionType: getSessionType(),
-    sessionNumber: document.getElementById('inp-session').value,
-    memo: document.getElementById('inp-memo').value.trim(),
-    token: ls('apiToken') || '',
-  };
-}
-
-function validatePayload(p) {
-  if (!p.date) return '実施日を入力してください';
-  if (!p.patientId) return '患者 ID を入力してください';
-  if (!p.hcuDay || Number(p.hcuDay) < 1) return 'HCU 入室日数を入力してください';
-  if (!p.department) return '診療科を選択してください';
-  if (!p.diagnosis) return '疾患を入力してください';
-  if (!p.sessionType) return '実施区分を選択してください';
-  if (!p.sessionNumber || Number(p.sessionNumber) < 1) return '回数を入力してください';
-  return null;
-}
-
-function friendlyErrorMessage(message) {
-  if (message === 'unauthorized') {
-    return '設定のGAS URL・アクセストークンが正しいか確認してください';
-  }
-  return 'エラー: ' + (message || '不明なエラー');
-}
-
-function getQueue() {
-  try { return JSON.parse(ls('pendingQueue') || '[]'); } catch (_) { return []; }
-}
-
-function saveQueue(q) { lss('pendingQueue', JSON.stringify(q)); }
-
-// 不完全なキュー項目を除去する（再送信時の3列だけ書き込みを防ぐ）
-function sanitizeQueue() {
-  const q = getQueue();
-  const valid = q.filter(p => !validatePayload(p));
-  const removed = q.length - valid.length;
-  if (removed > 0) saveQueue(valid);
-  return removed;
-}
-
-function updatePendingBanner() {
-  const q = getQueue();
-  const banner = document.getElementById('pending-banner');
-  document.getElementById('pending-count').textContent = q.length;
-  banner.classList.toggle('hidden', q.length === 0);
-}
-
-function migrateOldPending() {
-  const old = ls('pendingPayload');
-  if (!old) return;
-  try {
-    const { payload } = JSON.parse(old);
-    if (payload && !validatePayload(payload)) {
-      const q = getQueue();
-      q.push(payload);
-      saveQueue(q);
-    }
-  } catch (_) { /* 壊れた旧データは破棄 */ }
-  localStorage.removeItem('pendingPayload');
-}
-
-async function submitForm() {
-  if (_sending) { toast('送信中です。しばらくお待ちください'); return; }
-
-  const payload = buildPayload();
-  const err = validatePayload(payload);
-  if (err) { toast(err); return; }
-
-  updateWarnings();
-  if (isTestMode()) {
-    toast('テストモード：送信スキップ');
-    console.log('TEST payload', payload);
-    goScreen('screen-success');
-    return;
+  function setStat(id, val) {
+    document.getElementById(id).textContent = (val === undefined || val === null) ? '—' : val;
   }
 
-  const url = ls('gasUrl');
-  if (!url) { toast('設定で GAS URL を入力してください'); return; }
-
-  _sending = true;
-  setSubmitDisabled(true);
-  try {
-    const q = getQueue();
-    q.push(payload);
-    saveQueue(q);
-    updatePendingBanner();
-    await flushQueueBody();
-  } finally {
-    _sending = false;
-    setSubmitDisabled(false);
-  }
-}
-
-// キューを先頭から順に送信する。ネットワーク断・サーバーエラー時は
-// そこで停止し、残りは pendingQueue に残す（無駄な連続失敗を避ける）。
-async function flushQueue() {
-  if (_sending) { toast('送信中です'); return; }
-  _sending = true;
-  setSubmitDisabled(true);
-  try {
-    await flushQueueBody();
-  } finally {
-    _sending = false;
-    setSubmitDisabled(false);
-  }
-}
-
-async function flushQueueBody() {
-  const url = ls('gasUrl');
-  const skipped = sanitizeQueue();
-  if (skipped > 0) toast(`不完全な未送信データ ${skipped} 件を破棄しました`);
-
-  let q = getQueue();
-  const initialCount = q.length;
-  let sentCount = 0;
-
-  if (initialCount === 0) {
-    updatePendingBanner();
-    return;
-  }
-
-  toast('送信中…');
-  while (q.length > 0) {
-    const payload = q[0];
-    const validationErr = validatePayload(payload);
-    if (validationErr) {
-      q.shift();
-      saveQueue(q);
-      updatePendingBanner();
-      toast('不完全な未送信データを破棄しました');
-      continue;
-    }
+  async function refreshStats() {
+    const msg = document.getElementById('stats-msg');
     try {
-      const json = await gasPost(url, payload);
-      if (json.status !== 'ok') {
-        toast(friendlyErrorMessage(json.message));
-        break;
+      const res = await AFHS.loadStats();
+      if (!res.ok) {
+        const text = res.reason === 'unset'
+          ? 'GAS URL / トークン設定後に表示されます'
+          : AFHS.friendlyErrorMessage(res.reason);
+        msg.textContent = text;
+        ['month-total','month-initial','month-repeat','all-total','all-initial','all-repeat'].forEach(id => setStat(id, '—'));
+        return;
       }
-      q.shift();
-      saveQueue(q);
-      updatePendingBanner();
-      sentCount++;
+      msg.textContent = '';
+      const m = res.stats.month;
+      const a = res.stats.allTime;
+      setStat('month-total', m.total);
+      setStat('month-initial', m.initial);
+      setStat('month-repeat', m.repeat);
+      setStat('all-total', a.total);
+      setStat('all-initial', a.initial);
+      setStat('all-repeat', a.repeat);
+    } catch (_) {
+      msg.textContent = '集計を読み込めません';
+    }
+  }
+
+  function buildFilters() {
+    const roles = ['すべて'].concat(AFHS.CONFIG.roles);
+    const types = ['すべて'].concat(AFHS.CONFIG.noteTypes);
+    const rf = document.getElementById('role-filters');
+    const tf = document.getElementById('type-filters');
+    rf.innerHTML = roles.map(r => `<button type="button" data-v="${r}" class="${r===filterRole?'active':''}">${r}</button>`).join('');
+    tf.innerHTML = types.map(t => `<button type="button" data-v="${t}" class="${t===filterType?'active':''}">${t}</button>`).join('');
+    rf.onclick = (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      filterRole = b.dataset.v; buildFilters(); refreshNotes();
+    };
+    tf.onclick = (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      filterType = b.dataset.v; buildFilters(); refreshNotes();
+    };
+  }
+
+  function fillSelects() {
+    const roleSel = document.getElementById('note-role');
+    const typeSel = document.getElementById('note-type');
+    roleSel.innerHTML = AFHS.CONFIG.roles.map(r => `<option value="${r}">${r}</option>`).join('');
+    typeSel.innerHTML = AFHS.CONFIG.noteTypes.map(t => `<option value="${t}">${t}</option>`).join('');
+    const pref = AFHS.ls('preferredRole');
+    if (pref && AFHS.CONFIG.roles.includes(pref)) roleSel.value = pref;
+  }
+
+  async function refreshNotes() {
+    const el = document.getElementById('notes-list');
+    try {
+      const res = await AFHS.listNotes({ role: filterRole, type: filterType });
+      if (!res.ok) {
+        el.innerHTML = `<p style="font-size:13px;color:var(--subtle)">${res.reason === 'unset' ? '設定後に一覧が表示されます' : AFHS.friendlyErrorMessage(res.reason)}</p>`;
+        return;
+      }
+      if (!res.notes.length) {
+        el.innerHTML = '<p style="font-size:13px;color:var(--subtle)">まだメモがありません</p>';
+        return;
+      }
+      el.innerHTML = res.notes.map(n => `
+        <div class="note-item">
+          <div class="note-meta">
+            ${n.pinned ? '<span class="pin">重要</span>' : ''}
+            <span>${n.type}</span><span>${n.role}</span><span>${n.at || ''}</span>
+          </div>
+          <div class="note-body">${escapeHtml(n.body)}</div>
+        </div>`).join('');
+    } catch (_) {
+      el.innerHTML = '<p style="font-size:13px;color:var(--subtle)">メモを読み込めません</p>';
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function submitNote() {
+    const role = document.getElementById('note-role').value;
+    const type = document.getElementById('note-type').value;
+    const body = document.getElementById('note-body').value.trim();
+    const okPrivacy = document.getElementById('note-privacy').checked;
+    if (!body) { toast('本文を入力してください'); return; }
+    if (!okPrivacy) { toast('確認チェックを入れてください'); return; }
+    try {
+      const json = await AFHS.postNote({ role, type, body });
+      if (json.status !== 'ok') {
+        toast(AFHS.friendlyErrorMessage(json.message));
+        return;
+      }
+      AFHS.ls('preferredRole', role);
+      document.getElementById('note-body').value = '';
+      document.getElementById('note-privacy').checked = false;
+      toast(json.test ? 'テストモードのため未送信' : '投稿しました');
+      refreshNotes();
     } catch (err) {
-      console.error('flushQueue error', err);
-      toast('送信失敗: ' + (err.message || '通信エラー'));
-      break;
+      toast(err.message || '投稿に失敗しました');
     }
   }
 
-  if (sentCount === initialCount && sentCount > 0) {
-    toast('記録しました ✓');
-    setTimeout(() => goScreen('screen-success'), 800);
-  } else if (sentCount > 0) {
-    toast(`${sentCount}件送信、残り${q.length}件は未送信です`);
-  }
-}
-
-async function retryPending() {
-  await flushQueue();
-}
-
-function clearPending() {
-  const q = getQueue();
-  if (q.length === 0) return;
-  if (!confirm(`未送信のデータ ${q.length} 件をすべて破棄します。よろしいですか？`)) return;
-  saveQueue([]);
-  updatePendingBanner();
-  toast('未送信データを破棄しました');
-}
-
-function resetForm() {
-  document.getElementById('inp-patient').value = '';
-  document.getElementById('inp-hcuday').value = '';
-  document.getElementById('inp-dept').value = '';
-  document.getElementById('inp-dx').value = '';
-  document.getElementById('inp-session').value = '1';
-  document.getElementById('inp-memo').value = '';
-  document.querySelector('input[name="sessionType"][value="初回カンファ"]').checked = true;
-  document.getElementById('prefill-banner').classList.add('hidden');
-  document.getElementById('validation-warn').classList.add('hidden');
-  _patientHistory = null;
-  const t = new Date();
-  document.getElementById('inp-date').value =
-    `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
-  goScreen('screen-form');
-}
-
-async function loadStats() {
-  const el = document.getElementById('stats-content');
-  const url = ls('gasUrl');
-  if (!url || isTestMode()) {
-    el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">GAS URL 設定後に表示</div></div>`;
-    return;
-  }
-  try {
-    const token = ls('apiToken') || '';
-    const json = await gasFetch(`${url}?action=getStats&token=${encodeURIComponent(token)}`);
-    if (json.status !== 'ok') {
-      el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">${friendlyErrorMessage(json.message)}</div></div>`;
-      return;
-    }
-    const s = json.stats;
-    el.innerHTML = `
-      <div class="stat-cell"><div class="stat-num">${s.total}</div><div class="stat-lbl">今月 合計</div></div>
-      <div class="stat-cell"><div class="stat-num">${s.initial}</div><div class="stat-lbl">初回</div></div>
-      <div class="stat-cell"><div class="stat-num">${s.repeat}</div><div class="stat-lbl">再カンファ</div></div>`;
-  } catch (_) {
-    el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">集計を読み込めません</div></div>`;
-  }
-}
-
-let _tt;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_tt);
-  _tt = setTimeout(() => el.classList.remove('show'), 2600);
-}
+  document.addEventListener('DOMContentLoaded', () => {
+    AFHS.applyUrlParams();
+    document.getElementById('btn-notion').href = AFHS.CONFIG.notionUrl;
+    document.getElementById('btn-notion-2').href = AFHS.CONFIG.notionUrl;
+    buildFilters();
+    fillSelects();
+    refreshStats();
+    refreshNotes();
+  });
 </script>
 </body>
 </html>

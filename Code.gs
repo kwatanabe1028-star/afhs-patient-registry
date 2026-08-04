@@ -15,9 +15,11 @@
  *
  * 【シート】
  * - AFHS実施台帳 … 送信データ（自動作成）
+ * - 現場メモ … ポータルのメモ投稿（自動作成）
  */
 
 const SHEET_NAME = 'AFHS実施台帳';
+const NOTES_SHEET = '現場メモ';
 
 const HEADERS = [
   '実施日',         // A
@@ -30,6 +32,17 @@ const HEADERS = [
   'メモ',           // H
 ];
 
+const NOTE_HEADERS = [
+  '日時',   // A
+  '職種',   // B
+  '種別',   // C
+  '本文',   // D
+  'ピン',   // E
+];
+
+const NOTE_TYPES = ['引き継ぎ', '変更希望', '問題点', 'イベント', '一言', '重要連絡'];
+const NOTE_ROLES = ['医師', 'Ns', '薬剤', '栄養', 'リハ'];
+
 // ── POST 受信 ──────────────────────────────────────
 function doPost(e) {
   const rawBody = e && e.postData && e.postData.contents;
@@ -38,8 +51,11 @@ function doPost(e) {
     if (!isAuthorized_(data.token)) {
       return jsonResponse({ status: 'error', message: 'unauthorized' });
     }
-    // 歯抜けの行が黙って作られるのを防ぐ。原因（同時送信の衝突や通信経路での
-    // 欠落等）が何であれ、必須項目が欠けた状態では書き込まずエラーを返す。
+
+    if (data.action === 'postNote') {
+      return handlePostNote_(data);
+    }
+
     const missing = missingFields_(data);
     if (missing.length > 0) {
       console.log('doPost rejected: missing=' + missing.join(',') + ' body=' + rawBody);
@@ -65,14 +81,36 @@ function doPost(e) {
   }
 }
 
-// 必須項目（メモ以外）が欠けていないか確認する。フロント側の
-// validatePayload と同じ項目セットを、サーバー側でも独立にチェックする。
 function missingFields_(data) {
   const required = ['date', 'patientId', 'hcuDay', 'department', 'diagnosis', 'sessionType', 'sessionNumber'];
   return required.filter(key => {
     const v = data[key];
     return v === undefined || v === null || String(v).trim() === '';
   });
+}
+
+function handlePostNote_(data) {
+  const role = String(data.role || '').trim();
+  const type = String(data.type || '').trim();
+  const body = String(data.body || '').trim();
+  if (!NOTE_ROLES.includes(role)) {
+    return jsonResponse({ status: 'error', message: '職種が不正です' });
+  }
+  if (!NOTE_TYPES.includes(type)) {
+    return jsonResponse({ status: 'error', message: '種別が不正です' });
+  }
+  if (!body) {
+    return jsonResponse({ status: 'error', message: '本文が空です' });
+  }
+  if (body.length > 500) {
+    return jsonResponse({ status: 'error', message: '本文が長すぎます（500字以内）' });
+  }
+  const pinned = type === '重要連絡';
+  const sheet = getOrCreateNotesSheet_();
+  const now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm');
+  const targetRow = getNextDataRow_(sheet);
+  sheet.getRange(targetRow, 1, 1, 5).setValues([[now, role, type, body, pinned ? 'true' : '']]);
+  return jsonResponse({ status: 'ok' });
 }
 
 // ── GET ────────────────────────────────────────────
@@ -96,7 +134,21 @@ function doGet(e) {
       return jsonResponse({ status: 'error', message: 'unauthorized' });
     }
     try {
-      return jsonResponse({ status: 'ok', stats: getMonthlyStats() });
+      return jsonResponse({ status: 'ok', stats: getStats_() });
+    } catch (err) {
+      return jsonResponse({ status: 'error', message: err.message });
+    }
+  }
+
+  if (action === 'listNotes') {
+    if (!isAuthorized_(e.parameter.token)) {
+      return jsonResponse({ status: 'error', message: 'unauthorized' });
+    }
+    try {
+      const role = e.parameter.role || '';
+      const type = e.parameter.type || '';
+      const limit = Math.min(Number(e.parameter.limit) || 50, 100);
+      return jsonResponse({ status: 'ok', notes: listNotes_(role, type, limit) });
     } catch (err) {
       return jsonResponse({ status: 'error', message: err.message });
     }
@@ -145,49 +197,130 @@ function findPatientHistory(patientId) {
   };
 }
 
-// ── 月次サマリー（簡易） ────────────────────────────
-function getMonthlyStats() {
+// ── 集計（今月＋累計） ──────────────────────────────
+function getStats_() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const now = new Date();
+  const monthLabel = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM');
   if (!sheet) {
-    return { total: 0, initial: 0, repeat: 0 };
+    const empty = { total: 0, initial: 0, repeat: 0 };
+    return {
+      month: Object.assign({ label: monthLabel }, empty),
+      allTime: empty,
+      total: 0,
+      initial: 0,
+      repeat: 0,
+      monthLabel: monthLabel,
+    };
   }
 
-  const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
   const monthStart = new Date(y, m, 1);
   const monthEnd   = new Date(y, m + 1, 1);
 
   const rows = sheet.getDataRange().getValues();
-  let total = 0;
-  let initial = 0;
-  let repeat = 0;
+  const month = { total: 0, initial: 0, repeat: 0, label: monthLabel };
+  const allTime = { total: 0, initial: 0, repeat: 0 };
 
   for (let r = 1; r < rows.length; r++) {
     const d = new Date(rows[r][0]);
-    if (isNaN(d) || d < monthStart || d >= monthEnd) continue;
-    total++;
-    const sessionNum = Number(rows[r][6]) || 0;
-    const sessionType = String(rows[r][5]);
-    // 実施区分を優先し、初回・再カンファを排他的に分類する（二重カウント防止）
-    if (sessionType === '再カンファ') {
-      repeat++;
-    } else if (sessionType === '初回カンファ') {
-      initial++;
-    } else if (sessionNum > 1) {
-      repeat++;
-    } else {
-      initial++;
+    if (isNaN(d)) continue;
+    const classified = classifySession_(rows[r][5], rows[r][6]);
+    allTime.total++;
+    if (classified === 'repeat') allTime.repeat++;
+    else allTime.initial++;
+
+    if (d >= monthStart && d < monthEnd) {
+      month.total++;
+      if (classified === 'repeat') month.repeat++;
+      else month.initial++;
     }
   }
 
-  return { total, initial, repeat, month: Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM') };
+  // 後方互換: 旧 flat 形（今月）も返す
+  return {
+    month: month,
+    allTime: allTime,
+    total: month.total,
+    initial: month.initial,
+    repeat: month.repeat,
+    monthLabel: monthLabel,
+  };
+}
+
+function classifySession_(sessionType, sessionNum) {
+  const type = String(sessionType);
+  const num = Number(sessionNum) || 0;
+  if (type === '再カンファ') return 'repeat';
+  if (type === '初回カンファ') return 'initial';
+  if (num > 1) return 'repeat';
+  return 'initial';
+}
+
+// 旧名互換
+function getMonthlyStats() {
+  const s = getStats_();
+  return { total: s.total, initial: s.initial, repeat: s.repeat, month: s.monthLabel };
+}
+
+// ── 現場メモ ───────────────────────────────────────
+function listNotes_(roleFilter, typeFilter, limit) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(NOTES_SHEET);
+  if (!sheet) return [];
+
+  const rows = sheet.getDataRange().getValues();
+  const notes = [];
+  for (let r = rows.length - 1; r >= 1; r--) {
+    const role = String(rows[r][1] || '');
+    const type = String(rows[r][2] || '');
+    const body = String(rows[r][3] || '');
+    if (!body) continue;
+    if (roleFilter && roleFilter !== 'すべて' && role !== roleFilter) continue;
+    if (typeFilter && typeFilter !== 'すべて' && type !== typeFilter) continue;
+    notes.push({
+      at: formatNoteAt_(rows[r][0]),
+      role: role,
+      type: type,
+      body: body,
+      pinned: String(rows[r][4]) === 'true' || type === '重要連絡',
+    });
+    if (notes.length >= limit) break;
+  }
+
+  notes.sort(function (a, b) {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return String(b.at).localeCompare(String(a.at));
+  });
+  return notes;
+}
+
+function formatNoteAt_(val) {
+  if (!val) return '';
+  if (val instanceof Date && !isNaN(val)) {
+    return Utilities.formatDate(val, 'Asia/Tokyo', 'yyyy-MM-dd HH:mm');
+  }
+  return String(val);
+}
+
+function getOrCreateNotesSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(NOTES_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(NOTES_SHEET);
+    sheet.appendRow(NOTE_HEADERS);
+    const headerRange = sheet.getRange(1, 1, 1, NOTE_HEADERS.length);
+    headerRange.setBackground('#286858');
+    headerRange.setFontColor('#ffffff');
+    headerRange.setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidth(1, 140);
+    sheet.setColumnWidth(4, 360);
+  }
+  return sheet;
 }
 
 // ── ヘルパー ───────────────────────────────────────
-// 実施日（A列）だけを見て「本当の最終行」を判定する。
-// I列などに数式（ARRAYFORMULA等）があると、空文字の見かけ上の内容に
-// appendRow/getLastRowがだまされて、遠く離れた行に書き込んでしまうため。
 function getNextDataRow_(sheet) {
   const colA = sheet.getRange(1, 1, sheet.getMaxRows(), 1).getValues();
   for (let r = colA.length - 1; r >= 1; r--) {
