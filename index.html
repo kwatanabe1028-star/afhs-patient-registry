@@ -93,8 +93,67 @@
     }
     .band--dark .eyebrow { color: color-mix(in srgb, var(--white) 70%, var(--a6)); }
     .h2 { font-size: 22px; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 10px; }
-    .lead { font-size: 15px; line-height: 1.7; color: var(--muted); max-width: 40em; }
+    .lead {
+      font-size: 15px; line-height: 1.75; color: var(--muted); max-width: 36em;
+      line-break: strict; word-break: keep-all; overflow-wrap: anywhere;
+    }
     .band--dark .lead { color: color-mix(in srgb, var(--white) 86%, var(--a6)); }
+
+    /* WHY — 富士交易構図参考（色は自前） */
+    .band--why {
+      --why-navy: #1C3530;
+      --why-cyan: #196E96;
+      --why-bg: #E7EEF1;
+      background: var(--why-bg);
+      border-bottom: 1px solid color-mix(in srgb, var(--why-navy) 12%, var(--why-bg));
+      padding: 36px 18px 40px;
+      overflow: hidden;
+      position: relative;
+    }
+    .why-layout {
+      display: grid; gap: 20px; align-items: center;
+      position: relative; z-index: 1;
+    }
+    @media (min-width: 720px) {
+      .why-layout {
+        grid-template-columns: minmax(0, 1.15fr) minmax(180px, 0.85fr);
+        gap: 12px;
+      }
+    }
+    .band--why .eyebrow {
+      color: var(--why-cyan); margin-bottom: 14px;
+    }
+    .why-display {
+      font-size: clamp(28px, 6vw, 44px);
+      font-weight: 800; line-height: 1.15;
+      letter-spacing: 0.02em; color: var(--why-navy);
+      margin: 0 0 18px;
+    }
+    .why-lead {
+      font-size: clamp(15px, 2.2vw, 17px);
+      font-weight: 600; line-height: 1.85;
+      color: var(--why-navy); margin: 0;
+      line-break: strict; word-break: keep-all;
+    }
+    .why-lead .line { display: block; }
+    .why-rule {
+      margin-top: 18px; height: 2px; width: min(220px, 55%);
+      background: linear-gradient(90deg, var(--why-cyan), transparent);
+      border-radius: 2px;
+    }
+    .why-art {
+      justify-self: end; width: min(100%, 280px); height: 180px;
+      position: relative;
+    }
+    @media (max-width: 719px) {
+      .why-art { width: 70%; height: 120px; opacity: 0.9; margin-left: auto; }
+    }
+    .why-art svg { width: 100%; height: 100%; display: block; }
+
+    .how-lead .line { display: block; }
+    .how-note {
+      margin-top: 10px; font-size: 14px; font-weight: 600; color: var(--a2);
+    }
     .section { padding: 24px 18px 28px; }
     .card {
       background: var(--white); border: 1px solid var(--border);
@@ -397,16 +456,39 @@
     <p class="lead" id="stats-msg" style="margin-top:14px;font-size:13px;color:#5a7076"></p>
   </section>
 
-  <section class="band band--soft" id="why">
-    <div class="eyebrow">WHY</div>
-    <div class="h2">板中HCUだからできること</div>
-    <p class="lead">毎日多職種で板中版4Mをセットで回す。スコアで終わらせず、今日やる一手までみんなで決める。</p>
+  <section class="band band--why" id="why">
+    <div class="why-layout">
+      <div class="why-copy">
+        <div class="eyebrow">WHY</div>
+        <h2 class="why-display">板中HCUだから<br>できること</h2>
+        <p class="why-lead">
+          <span class="line">毎日多職種で板中版4Mをセットで回す。</span>
+          <span class="line">スコアで終わらせず、今日やる一手までみんなで決める。</span>
+        </p>
+        <div class="why-rule" aria-hidden="true"></div>
+      </div>
+      <div class="why-art" aria-hidden="true">
+        <svg viewBox="0 0 280 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M40 150 C40 90, 40 70, 95 70 C140 70, 150 110, 200 110 C245 110, 255 70, 300 70"
+                stroke="#1C3530" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M-10 40 C40 40, 55 90, 95 90 C130 90, 145 40, 200 40"
+                stroke="#196E96" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M160 160 C200 160, 220 120, 260 120 C290 120, 310 150, 340 150"
+                stroke="#1C3530" stroke-width="22" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
   </section>
 
   <section class="band" id="how">
     <div class="eyebrow">HOW</div>
     <div class="h2">まわり方</div>
-    <p class="lead">目安 10:30／約30分。中央テーブルでまとめてカンファ → ベッドサイド。司会は専従医。<br>医師の運用手順は Notion。</p>
+    <p class="lead how-lead">
+      <span class="line">目安 10:30／約30分。</span>
+      <span class="line">中央テーブルでまとめてカンファ → ベッドサイド。</span>
+      <span class="line">司会は専従医。</span>
+    </p>
+    <p class="how-note">医師の運用手順は Notion。</p>
     <div class="btn-row">
       <a class="btn btn-primary" href="registry.html">台帳入力</a>
       <a class="btn btn-outline" id="btn-notion" target="_blank" rel="noopener">医師の運用手順（Notion）</a>
