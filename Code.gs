@@ -65,7 +65,7 @@ function doPost(e) {
     const row = [
       toSlashDate_(data.date),
       data.patientId      || '',
-      Number(data.hcuDay) || '',
+      toNumberOrBlank_(data.hcuDay),
       data.department     || '',
       data.diagnosis      || '',
       data.sessionType    || '',
@@ -79,6 +79,12 @@ function doPost(e) {
     console.log('doPost error: ' + err.message + ' body=' + rawBody);
     return jsonResponse({ status: 'error', message: err.message });
   }
+}
+
+function toNumberOrBlank_(v) {
+  if (v === undefined || v === null || String(v).trim() === '') return '';
+  const n = Number(v);
+  return Number.isFinite(n) ? n : '';
 }
 
 function missingFields_(data) {

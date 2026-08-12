@@ -301,7 +301,7 @@
         </div>
         <div class="field">
           <label class="field-label" for="inp-hcuday">HCU 入室日数 <span class="req-badge">必須</span></label>
-          <input class="field-control" type="number" id="inp-hcuday" min="1" placeholder="例：3（入室日=1日目）" required>
+          <input class="field-control" type="number" id="inp-hcuday" min="0" placeholder="例：3（入室日=0日目）" required>
         </div>
       </div>
 
@@ -709,7 +709,7 @@ function updateFieldStates() {
   const specs = [
     { id: 'inp-date', ok: el => !!el.value },
     { id: 'inp-patient', ok: el => !!el.value.trim() },
-    { id: 'inp-hcuday', ok: el => Number(el.value) >= 1 },
+    { id: 'inp-hcuday', ok: el => el.value !== '' && Number(el.value) >= 0 },
     { id: 'inp-dept', ok: el => !!el.value },
     { id: 'inp-dx', ok: el => !!el.value.trim() },
     { id: 'inp-session', ok: el => Number(el.value) >= 1 },
@@ -732,7 +732,7 @@ function updateFieldStates() {
 function validatePayload(p) {
   if (!p.date) return '実施日を入力してください';
   if (!p.patientId) return '患者 ID を入力してください';
-  if (!p.hcuDay || Number(p.hcuDay) < 1) return 'HCU 入室日数を入力してください';
+  if (p.hcuDay === '' || p.hcuDay == null || Number.isNaN(Number(p.hcuDay)) || Number(p.hcuDay) < 0) return 'HCU 入室日数を入力してください';
   if (!p.department) return '診療科を選択してください';
   if (!p.diagnosis) return '疾患を入力してください';
   if (!p.sessionType) return '実施区分を選択してください';
