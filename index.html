@@ -459,7 +459,6 @@
     <h1>AFHS<span class="sub">板橋中央 HCU</span></h1>
     <div class="header-right">
       <a class="link-btn link-btn--registry" href="registry.html">台帳入力</a>
-      <button class="settings-btn" type="button" onclick="openSettings()">⚙ 設定</button>
     </div>
   </header>
 
@@ -533,7 +532,7 @@
     <div class="btn-row btn-row--registry">
       <a class="btn btn-registry" href="registry.html">台帳入力</a>
       <a class="btn btn-outline" id="btn-notion" target="_blank" rel="noopener">医師の運用手順（Notion）</a>
-      <button class="btn btn-outline" type="button" onclick="AFHS.openSheetWithTokenGate()">実施台帳（Googleスプレッドシート）</button>
+      <button class="btn btn-outline" type="button" onclick="AFHS.openSheet()">実施台帳（Googleスプレッドシート）</button>
     </div>
     <div class="role-grid" aria-label="職種ページ">
       <a href="role-doctor.html">医師<span>準備中 · メモ可</span></a>
@@ -679,26 +678,9 @@
     <div class="btn-row btn-row--registry">
       <a class="btn btn-registry" href="registry.html">台帳入力</a>
       <a class="btn btn-outline" href="#" id="btn-notion-2" target="_blank" rel="noopener">医師の運用手順（Notion）</a>
-      <button class="btn btn-outline" type="button" onclick="AFHS.openSheetWithTokenGate()">実施台帳（Googleスプレッドシート）</button>
+      <button class="btn btn-outline" type="button" onclick="AFHS.openSheet()">実施台帳（Googleスプレッドシート）</button>
     </div>
   </section>
-</div>
-
-<div id="settings-modal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
-  <div class="modal-card">
-    <div class="card-title">設定</div>
-    <label class="field-label" for="inp-gasurl">GAS Web App URL</label>
-    <input type="text" id="inp-gasurl" placeholder="https://script.google.com/macros/s/.../exec">
-    <label class="field-label" for="inp-apitoken">アクセストークン</label>
-    <input type="text" id="inp-apitoken" placeholder="API_TOKEN">
-    <p style="font-size:12px;color:var(--subtle);margin-bottom:12px;line-height:1.6">
-      実施台帳（Googleスプレッドシート）を開くときも、このトークンが必要です。
-    </p>
-    <div class="btn-row">
-      <button class="btn btn-primary" type="button" onclick="saveSettings()">設定を保存</button>
-      <button class="btn btn-outline" type="button" onclick="closeSettings()">閉じる</button>
-    </div>
-  </div>
 </div>
 
 <div id="toast"></div>
@@ -714,23 +696,6 @@
     el.classList.add('show');
     clearTimeout(_tt);
     _tt = setTimeout(() => el.classList.remove('show'), 2600);
-  }
-
-  function openSettings() {
-    document.getElementById('inp-gasurl').value = AFHS.ls('gasUrl');
-    document.getElementById('inp-apitoken').value = AFHS.ls('apiToken');
-    document.getElementById('settings-modal').classList.remove('hidden');
-  }
-  function closeSettings() {
-    document.getElementById('settings-modal').classList.add('hidden');
-  }
-  function saveSettings() {
-    AFHS.ls('gasUrl', document.getElementById('inp-gasurl').value.trim());
-    AFHS.ls('apiToken', document.getElementById('inp-apitoken').value.trim());
-    toast('設定を保存しました');
-    closeSettings();
-    refreshStats();
-    refreshNotes();
   }
 
   function setStat(id, val) {
@@ -764,7 +729,7 @@
       const res = await AFHS.loadStats();
       if (!res.ok) {
         const text = res.reason === 'unset'
-          ? 'GAS URL / トークン設定後に表示されます'
+          ? '集計を読み込めません（テストモードの可能性があります）'
           : AFHS.friendlyErrorMessage(res.reason);
         msg.textContent = text;
         ['month-total','month-initial','month-repeat','all-total','all-initial','all-repeat'].forEach(id => setStat(id, '—'));
@@ -837,7 +802,7 @@
     try {
       const res = await AFHS.listNotes({ role: filterRole, type: filterType });
       if (!res.ok) {
-        el.innerHTML = `<p style="font-size:13px;color:var(--subtle)">${res.reason === 'unset' ? '設定後に一覧が表示されます' : AFHS.friendlyErrorMessage(res.reason)}</p>`;
+        el.innerHTML = `<p style="font-size:13px;color:var(--subtle)">${res.reason === 'unset' ? 'メモを読み込めません' : AFHS.friendlyErrorMessage(res.reason)}</p>`;
         return;
       }
       if (!res.notes.length) {

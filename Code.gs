@@ -4,14 +4,13 @@
  * 【セットアップ】
  * 1. Google スプレッドシートを新規作成
  * 2. 拡張機能 → Apps Script にこのコードを貼り付けて保存
- * 3. プロジェクトの設定 → スクリプト プロパティ → `API_TOKEN` に
- *    十分ランダムな文字列を設定（このファイルは公開リポジトリに
- *    コミットされるため、トークンをコードに直書きしないこと）
- * 4. デプロイ → 新しいデプロイ → 種類:「ウェブアプリ」
+ * 3. デプロイ → 新しいデプロイ → 種類:「ウェブアプリ」
  *    - 実行ユーザー: 自分
  *    - アクセスできるユーザー: 全員
- * 5. デプロイ URL とスクリプト プロパティに設定したトークンを
- *    GitHub Pages アプリの設定画面に入力
+ * 4. デプロイ URL をフロントの afhs-common.js（CONFIG.gasUrl）に書き、push
+ *
+ * 認証トークンは使わない（入力は患者ID・診療科等のみ。氏名は扱わない）。
+ * URL を知る人は誰でも書き込みできる点に留意すること。
  *
  * 【シート】
  * - AFHS実施台帳 … 送信データ（自動作成）
@@ -48,9 +47,6 @@ function doPost(e) {
   const rawBody = e && e.postData && e.postData.contents;
   try {
     const data = JSON.parse(rawBody);
-    if (!isAuthorized_(data.token)) {
-      return jsonResponse({ status: 'error', message: 'unauthorized' });
-    }
 
     if (data.action === 'postNote') {
       return handlePostNote_(data);
@@ -125,9 +121,6 @@ function doGet(e) {
   const patientId = e && e.parameter && e.parameter.patientId;
 
   if (action === 'getPatient' && patientId) {
-    if (!isAuthorized_(e.parameter.token)) {
-      return jsonResponse({ status: 'error', message: 'unauthorized' });
-    }
     try {
       return jsonResponse({ status: 'ok', patient: findPatientHistory(patientId) });
     } catch (err) {
@@ -136,9 +129,6 @@ function doGet(e) {
   }
 
   if (action === 'getStats') {
-    if (!isAuthorized_(e.parameter.token)) {
-      return jsonResponse({ status: 'error', message: 'unauthorized' });
-    }
     try {
       return jsonResponse({ status: 'ok', stats: getStats_() });
     } catch (err) {
@@ -147,9 +137,6 @@ function doGet(e) {
   }
 
   if (action === 'listNotes') {
-    if (!isAuthorized_(e.parameter.token)) {
-      return jsonResponse({ status: 'error', message: 'unauthorized' });
-    }
     try {
       const role = e.parameter.role || '';
       const type = e.parameter.type || '';
@@ -335,11 +322,6 @@ function getNextDataRow_(sheet) {
 
 function toSlashDate_(ymd) {
   return ymd ? String(ymd).replace(/-/g, '/') : '';
-}
-
-function isAuthorized_(token) {
-  const expected = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
-  return !!expected && token === expected;
 }
 
 function getOrCreateSheet() {

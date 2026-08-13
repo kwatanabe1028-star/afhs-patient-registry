@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AFHS 患者集計</title>
+  <script src="afhs-common.js"></script>
   <style>
     :root {
       --bg:    #D6D1C2;
@@ -389,24 +390,6 @@
     </div>
     <div style="padding:16px 14px 32px">
       <div class="card">
-        <div class="card-title">GAS Web App URL</div>
-        <div class="field">
-          <input type="text" id="inp-gasurl" placeholder="https://script.google.com/macros/s/.../exec">
-        </div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6">
-          Google Apps Script をウェブアプリとしてデプロイした URL を入力します。
-        </p>
-      </div>
-      <div class="card">
-        <div class="card-title">アクセストークン</div>
-        <div class="field">
-          <input type="text" id="inp-apitoken" placeholder="GAS のスクリプト プロパティに設定した API_TOKEN">
-        </div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6">
-          GAS 側の「スクリプト プロパティ」に設定した <code>API_TOKEN</code> と同じ値を入力します。管理者から共有された値を入力してください。
-        </p>
-      </div>
-      <div class="card">
         <div class="card-title">テストモード</div>
         <div class="toggle-row">
           <span style="font-size:14px;font-weight:600">テストモード</span>
@@ -419,7 +402,7 @@
           ON のとき送信データは GAS に送られません（UI 確認用）。
         </p>
       </div>
-      <button class="btn btn-primary" onclick="saveSettings()">設定を保存</button>
+      <button class="btn btn-primary" onclick="saveSettings()">閉じる</button>
     </div>
   </div>
 </div>
@@ -454,19 +437,11 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   const params = new URLSearchParams(location.search);
-  const gasFromUrl = params.get('gas');
-  const tokenFromUrl = params.get('token');
-  if (gasFromUrl) {
-    lss('gasUrl', gasFromUrl);
-    history.replaceState(null, '', location.pathname);
-  }
-  if (tokenFromUrl) {
-    lss('apiToken', tokenFromUrl);
+  // 旧 ?gas= / ?token= は無視（GAS URL は afhs-common.js に固定）
+  if (params.has('gas') || params.has('token')) {
     history.replaceState(null, '', location.pathname);
   }
 
-  document.getElementById('inp-gasurl').value = ls('gasUrl') || '';
-  document.getElementById('inp-apitoken').value = ls('apiToken') || '';
   applyTestMode(ls('testMode') === 'true');
 
   migrateOldPending();
@@ -504,17 +479,10 @@ function goScreen(id) {
 }
 
 function goSettings() {
-  document.getElementById('inp-gasurl').value = ls('gasUrl') || '';
-  document.getElementById('inp-apitoken').value = ls('apiToken') || '';
   goScreen('screen-settings');
 }
 
 function saveSettings() {
-  const url = document.getElementById('inp-gasurl').value.trim();
-  const token = document.getElementById('inp-apitoken').value.trim();
-  lss('gasUrl', url);
-  lss('apiToken', token);
-  toast('設定を保存しました');
   goScreen('screen-form');
 }
 
@@ -573,10 +541,9 @@ async function gasFetch(url, options = {}) {
 
 // POST 送信後に getPatient でシート反映を確認（Failed to fetch 対策）
 async function verifyPostSaved(url, payload) {
-  const token = ls('apiToken') || '';
   try {
     const json = await gasFetch(
-      `${url}?action=getPatient&patientId=${encodeURIComponent(payload.patientId)}&token=${encodeURIComponent(token)}`
+      `${url}?action=getPatient&patientId=${encodeURIComponent(payload.patientId)}`
     );
     if (json.status !== 'ok' || !json.patient?.records) return false;
     const session = Number(payload.sessionNumber);
@@ -589,8 +556,7 @@ async function verifyPostSaved(url, payload) {
 }
 
 async function gasPost(url, payload) {
-  const token = ls('apiToken') || '';
-  const body = JSON.stringify({ ...payload, token });
+  const body = JSON.stringify(payload);
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -631,13 +597,12 @@ async function lookupPatient() {
   banner.classList.add('hidden');
 
   if (!id) return;
-  const url = ls('gasUrl');
+  const url = AFHS.gasUrl();
   if (!url || isTestMode()) return;
 
   try {
-    const token = ls('apiToken') || '';
     const json = await gasFetch(
-      `${url}?action=getPatient&patientId=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`
+      `${url}?action=getPatient&patientId=${encodeURIComponent(id)}`
     );
     if (json.status !== 'ok' || !json.patient?.found) return;
 
@@ -701,7 +666,6 @@ function buildPayload() {
     sessionType: getSessionType(),
     sessionNumber: document.getElementById('inp-session').value,
     memo: document.getElementById('inp-memo').value.trim(),
-    token: ls('apiToken') || '',
   };
 }
 
@@ -741,9 +705,6 @@ function validatePayload(p) {
 }
 
 function friendlyErrorMessage(message) {
-  if (message === 'unauthorized') {
-    return '設定のGAS URL・アクセストークンが正しいか確認してください';
-  }
   return 'エラー: ' + (message || '不明なエラー');
 }
 
@@ -798,8 +759,8 @@ async function submitForm() {
     return;
   }
 
-  const url = ls('gasUrl');
-  if (!url) { toast('設定で GAS URL を入力してください'); return; }
+  const url = AFHS.gasUrl();
+  if (!url) { toast('GAS URL が設定されていません（管理者に連絡）'); return; }
 
   _sending = true;
   setSubmitDisabled(true);
@@ -830,7 +791,7 @@ async function flushQueue() {
 }
 
 async function flushQueueBody() {
-  const url = ls('gasUrl');
+  const url = AFHS.gasUrl();
   const skipped = sanitizeQueue();
   if (skipped > 0) toast(`不完全な未送信データ ${skipped} 件を破棄しました`);
 
@@ -921,14 +882,13 @@ function resetForm() {
 
 async function loadStats() {
   const el = document.getElementById('stats-content');
-  const url = ls('gasUrl');
+  const url = AFHS.gasUrl();
   if (!url || isTestMode()) {
-    el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">GAS URL 設定後に表示</div></div>`;
+    el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">テストモード中は非表示</div></div>`;
     return;
   }
   try {
-    const token = ls('apiToken') || '';
-    const json = await gasFetch(`${url}?action=getStats&token=${encodeURIComponent(token)}`);
+    const json = await gasFetch(`${url}?action=getStats`);
     if (json.status !== 'ok') {
       el.innerHTML = `<div class="stat-cell" style="grid-column:1/-1"><div class="stat-lbl">${friendlyErrorMessage(json.message)}</div></div>`;
       return;

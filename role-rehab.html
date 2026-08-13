@@ -129,7 +129,7 @@
     const el=document.getElementById('notes-list');
     try{
       const res=await AFHS.listNotes({ role: ROLE, type: filterType });
-      if(!res.ok){ el.innerHTML=`<p style="font-size:13px;color:var(--subtle)">${res.reason==='unset'?'設定後に表示されます':AFHS.friendlyErrorMessage(res.reason)}</p>`; return; }
+      if(!res.ok){ el.innerHTML=`<p style="font-size:13px;color:var(--subtle)">${res.reason==='unset'?'読み込めません':AFHS.friendlyErrorMessage(res.reason)}</p>`; return; }
       if(!res.notes.length){ el.innerHTML='<p style="font-size:13px;color:var(--subtle)">まだメモがありません</p>'; return; }
       el.innerHTML=res.notes.map(n=>`<div class="note-item"><div class="note-meta">${n.pinned?'<span class="pin">重要</span>':''}<span>${n.type}</span><span>${n.at||''}</span></div><div class="note-body">${escapeHtml(n.body)}</div></div>`).join('');
     }catch(_){ el.innerHTML='<p style="font-size:13px;color:var(--subtle)">読み込めません</p>'; }
